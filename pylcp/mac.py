@@ -28,6 +28,10 @@ def request(method, url, **kwargs):
                                                           kwargs.get('headers')['Content-Type'],
                                                           kwargs.get('data')
                                                           )
+
+        kwargs.pop('mac_key_identifier')
+        kwargs.pop('mac_key')
+
         kwargs['headers']['Authorization'] = auth_header
 
     return requests.request(method, url, **kwargs)
