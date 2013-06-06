@@ -15,98 +15,43 @@ def generate_authorization_header_value(
     return "NOT IMPLEMENTED"
 
 
+def request(method, url, **kwargs):
+
+    if 'mac_key_identifier' in kwargs and 'mac_key' in kwargs:
+        parsed_url = urlparse(url)
+        auth_header = generate_authorization_header_value(method,
+                                                          parsed_url.hostname,
+                                                          parsed_url.port,
+                                                          parsed_url.path,
+                                                          kwargs['mac_key_identifier'],
+                                                          kwargs['mac_key'],
+                                                          kwargs.get('headers')['Content-Type'],
+                                                          kwargs.get('data')
+                                                          )
+        kwargs['headers']['Authorization'] = auth_header
+
+    return requests.request(method, url, **kwargs)
+
+
 def delete(url, **kwargs):
-
-    parsed_url = urlparse(url)
-    auth_header = generate_authorization_header_value('DELETE',
-                                                      parsed_url.hostname,
-                                                      parsed_url.port,
-                                                      parsed_url.path,
-                                                      kwargs['mac_key_identifier'],
-                                                      kwargs['mac_key'],
-                                                      kwargs['headers']['Content-Type'],
-                                                      kwargs['data']
-                                                      )
-
-    kwargs['headers']['Authorization'] = auth_header
-    return requests.delete(url, **kwargs)
+    return request('DELETE', url, **kwargs)
 
 
 def get(url, **kwargs):
-    parsed_url = urlparse(url)
-    auth_header = generate_authorization_header_value('GET',
-                                                      parsed_url.hostname,
-                                                      parsed_url.port,
-                                                      parsed_url.path,
-                                                      kwargs['mac_key_identifier'],
-                                                      kwargs['mac_key'],
-                                                      kwargs['headers']['Content-Type'],
-                                                      kwargs['data']
-                                                      )
-
-    kwargs['headers']['Authorization'] = auth_header
-    return requests.delete(url, **kwargs)
+    return request('GET', url, **kwargs)
 
 
 def head(url, **kwargs):
-    parsed_url = urlparse(url)
-    auth_header = generate_authorization_header_value('HEAD',
-                                                      parsed_url.hostname,
-                                                      parsed_url.port,
-                                                      parsed_url.path,
-                                                      kwargs['mac_key_identifier'],
-                                                      kwargs['mac_key'],
-                                                      kwargs['headers']['Content-Type'],
-                                                      kwargs['data']
-                                                      )
-
-    kwargs['headers']['Authorization'] = auth_header
-    return requests.delete(url, **kwargs)
+    return request('HEAD', url, **kwargs)
 
 
 def patch(url, **kwargs):
-    parsed_url = urlparse(url)
-    auth_header = generate_authorization_header_value('PATCH',
-                                                      parsed_url.hostname,
-                                                      parsed_url.port,
-                                                      parsed_url.path,
-                                                      kwargs['mac_key_identifier'],
-                                                      kwargs['mac_key'],
-                                                      kwargs['headers']['Content-Type'],
-                                                      kwargs['data']
-                                                      )
-
-    kwargs['headers']['Authorization'] = auth_header
-    return requests.delete(url, **kwargs)
+    return request('PATCH', url, **kwargs)
 
 
 def post(url, **kwargs):
-    parsed_url = urlparse(url)
-    auth_header = generate_authorization_header_value('POST',
-                                                      parsed_url.hostname,
-                                                      parsed_url.port,
-                                                      parsed_url.path,
-                                                      kwargs['mac_key_identifier'],
-                                                      kwargs['mac_key'],
-                                                      kwargs['headers']['Content-Type'],
-                                                      kwargs['data']
-                                                      )
-
-    kwargs['headers']['Authorization'] = auth_header
-    return requests.delete(url, **kwargs)
+    return request('POST', url, **kwargs)
 
 
 def put(url, **kwargs):
-    parsed_url = urlparse(url)
-    auth_header = generate_authorization_header_value('PUT',
-                                                      parsed_url.hostname,
-                                                      parsed_url.port,
-                                                      parsed_url.path,
-                                                      kwargs['mac_key_identifier'],
-                                                      kwargs['mac_key'],
-                                                      kwargs['headers']['Content-Type'],
-                                                      kwargs['data']
-                                                      )
-
-    kwargs['headers']['Authorization'] = auth_header
-    return requests.delete(url, **kwargs)
+    return request('PUT', url, **kwargs)
