@@ -1,3 +1,4 @@
+from urlparse import urlparse
 import base64
 import hashlib
 import logging
@@ -6,11 +7,56 @@ import re
 import time
 
 import keyczar.keys
+import requests
 
 
 logger = logging.getLogger(__name__)
 
 
+def request(method, url, **kwargs):
+
+    if 'mac_key_identifier' in kwargs and 'mac_key' in kwargs:
+        parsed_url = urlparse(url)
+        auth_header = generate_authorization_header_value(method,
+                                                          parsed_url.hostname,
+                                                          parsed_url.port,
+                                                          parsed_url.path,
+                                                          kwargs['mac_key_identifier'],
+                                                          kwargs['mac_key'],
+                                                          kwargs.get('headers')['Content-Type'],
+                                                          kwargs.get('data')
+                                                          )
+
+        kwargs.pop('mac_key_identifier')
+        kwargs.pop('mac_key')
+
+        kwargs['headers']['Authorization'] = auth_header
+
+    return requests.request(method, url, **kwargs)
+
+
+def delete(url, **kwargs):
+    return request('DELETE', url, **kwargs)
+
+
+def get(url, **kwargs):
+    return request('GET', url, **kwargs)
+
+
+def head(url, **kwargs):
+    return request('HEAD', url, **kwargs)
+
+
+def patch(url, **kwargs):
+    return request('PATCH', url, **kwargs)
+
+
+def post(url, **kwargs):
+    return request('POST', url, **kwargs)
+
+
+def put(url, **kwargs):
+    return request('PUT', url, **kwargs)
 """To help prevent reply attacks the timestamp of all requests can
 be no older than ```TIMESTAMP_MAX_SECONDS``` seconds before the current
 timestamp.  Also, because clocks can be out of sync we allow the timestamp to be
