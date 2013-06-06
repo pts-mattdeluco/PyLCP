@@ -24,7 +24,7 @@ def request(method, url, **kwargs):
                                                           kwargs['mac_key_identifier'],
                                                           kwargs['mac_key'],
                                                           kwargs.get('headers')['Content-Type'],
-                                                          kwargs.get('data')
+                                                          kwargs.get('data', '')
                                                           )
 
         kwargs.pop('mac_key_identifier')
