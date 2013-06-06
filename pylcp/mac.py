@@ -12,7 +12,7 @@ def generate_authorization_header_value(
         content_type,
         body):
 
-    return "NOT IMPLEMENTED"
+    return mac_key_identifier
 
 
 def request(method, url, **kwargs):
