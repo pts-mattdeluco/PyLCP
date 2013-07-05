@@ -86,7 +86,7 @@ def generate_ext(content_type, body):
     """Implements the notion of the ext as described in
     http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.1"""
 
-    if content_type is not None and body is not None:
+    if content_type is not None and body is not None and len(content_type) > 0 and len(body) > 0:
         content_type_plus_body = content_type + body
         content_type_plus_body_hash = hashlib.sha1(content_type_plus_body)
         ext = content_type_plus_body_hash.hexdigest()
