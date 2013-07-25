@@ -126,7 +126,7 @@ def generate_signature(mac_key, normalized_request_string):
 
 def verify_signature(mac_sign, shared_secret, normalized_request_string):
     """ Determine if the request signature is valid i.e. it was signed with a valid shared secret """
-    # TODO - ensure that the keymode (sandbox or prod) matches the Host appropriately.
+    # TODO - ensure that the keymode (sandbox or live) matches the Host appropriately.
 
     if not keyczar.keys.HmacKey(shared_secret).Verify(
             normalized_request_string, keyczar.util.Base64WSDecode(mac_sign)):
