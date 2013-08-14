@@ -1,6 +1,5 @@
 import logging
 import json
-import urlparse
 
 import requests
 
@@ -28,13 +27,10 @@ class Client(object):
             url = self.base_url + url
         logger.debug('%s to %s with %s', method, url, payload)
         body = json.dumps(payload)
-        url_parts = urlparse.urlparse(url)
         if self.key_id:
             headers['Authorization'] = generate_authorization_header_value(
                 method,
-                url_parts.hostname,
-                url_parts.port or '80',
-                url_parts.path,
+                url,
                 self.key_id,
                 self.shared_secret,
                 headers['Content-Type'],

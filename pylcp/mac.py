@@ -1,10 +1,11 @@
-from urlparse import urlparse
 import base64
 import hashlib
+import httplib
 import logging
 import os
 import re
 import time
+import urlparse
 
 import keyczar.keys
 import requests
@@ -16,11 +17,8 @@ logger = logging.getLogger(__name__)
 def request(method, url, **kwargs):
 
     if 'mac_key_identifier' in kwargs and 'mac_key' in kwargs:
-        parsed_url = urlparse(url)
         auth_header = generate_authorization_header_value(method,
-                                                          parsed_url.hostname,
-                                                          parsed_url.port,
-                                                          parsed_url.path,
+                                                          url,
                                                           kwargs['mac_key_identifier'],
                                                           kwargs['mac_key'],
                                                           kwargs.get('headers')['Content-Type'],
@@ -135,14 +133,18 @@ def verify_signature(mac_sign, shared_secret, normalized_request_string):
 
 def generate_authorization_header_value(
         http_method,
-        host,
-        port,
-        request_path,
+        url,
         mac_key_identifier,
         mac_key,
         content_type,
         body):
-
+    url_parts = urlparse.urlparse(url)
+    port = url_parts.port
+    if not port:
+        if url_parts.scheme == 'https':
+            port = str(httplib.HTTPS_PORT)
+        else:
+            port = str(httplib.HTTP_PORT)
     ts = str(int(time.time()))
     nonce = generate_nonce()
     ext = generate_ext(content_type, body)
@@ -150,9 +152,9 @@ def generate_authorization_header_value(
         ts,
         nonce,
         http_method,
-        host,
+        url_parts.hostname,
         port,
-        request_path,
+        url_parts.path,
         ext)
 
     signature = generate_signature(mac_key, normalized_request_string)

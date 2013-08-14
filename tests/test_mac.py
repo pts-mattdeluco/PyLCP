@@ -134,14 +134,14 @@ class GenerateAuthorizationHeaderValueTestCase(unittest.TestCase):
     def test_returns_authorization_header_as_per_rfc(self):
         # http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.1
         retval = mac.generate_authorization_header_value(
-            'METHOD', 'HOST', 8008, 'PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE',
+            'METHOD', 'http://HOST:8008/PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE',
             'BODY')
         self.assertEquals(
             retval, 'MAC id="KEY_ID", ts="42", nonce="NONCE", ext="EXT", mac="SIGNATURE"')
 
     def test_calls_all_dependencies(self):
         mac.generate_authorization_header_value(
-            'METHOD', 'HOST', 8008, 'PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE',
+            'METHOD', 'http://HOST:8008/PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE',
             'BODY')
         self.assertEquals(self.mock_time.call_args_list, [call()])
         self.assertEquals(self.mock_generate_nonce.call_args_list, [call()])
