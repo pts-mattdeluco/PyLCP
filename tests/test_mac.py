@@ -208,14 +208,14 @@ class AuthHeaderValueTestCase(unittest.TestCase):
     def test_parse_logs_valid_format(self, mock_logger):
         mac.AuthHeaderValue.parse(self._create_ahv_str())
         self.assertEquals(mock_logger.info.call_args_list, [
-            call("Valid format for authorization header '%s'", self._create_ahv_str())])
+            call("Valid format for authorization header %r", self._create_ahv_str())])
 
     @patch('lcp.mac.logger')
     def assert_parse_logs_and_raises(self, header_value, mock_logger):
         with self.assertRaises(mac.InvalidAuthHeader):
             mac.AuthHeaderValue.parse(header_value)
         self.assertEquals(mock_logger.warning.call_args_list, [
-            call("Invalid format for authorization header '%s'", header_value)])
+            call("Invalid format for authorization header %r", header_value)])
 
     def test_parse_with_empty_mac_key_identifier_logs_and_raises(self):
         self.assert_parse_logs_and_raises(self._create_ahv_str(mac_key_identifier=""))

@@ -221,11 +221,11 @@ class AuthHeaderValue(object):
         match = value and reg_ex.match(value)
         if not match:
             logger.warning(
-                "Invalid format for authorization header '%s'",
+                "Invalid format for authorization header %r",
                 value)
             raise InvalidAuthHeader()
         logger.info(
-            "Valid format for authorization header '%s'",
+            "Valid format for authorization header %r",
             value)
 
         assert 0 == match.start()
