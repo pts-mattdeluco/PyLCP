@@ -17,13 +17,14 @@ logger = logging.getLogger(__name__)
 def request(method, url, **kwargs):
 
     if 'mac_key_identifier' in kwargs and 'mac_key' in kwargs:
-        auth_header = generate_authorization_header_value(method,
-                                                          url,
-                                                          kwargs['mac_key_identifier'],
-                                                          kwargs['mac_key'],
-                                                          kwargs.get('headers')['Content-Type'],
-                                                          kwargs.get('data', '')
-                                                          )
+        auth_header = generate_authorization_header_value(
+            method,
+            url,
+            kwargs['mac_key_identifier'],
+            kwargs['mac_key'],
+            kwargs.get('headers', {}).get('Content-Type', ''),
+            kwargs.get('data', '')
+        )
 
         kwargs.pop('mac_key_identifier')
         kwargs.pop('mac_key')
