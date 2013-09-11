@@ -25,6 +25,5 @@ class TestApiClient(object):
     @mock.patch('lcp.api.requests.request')
     def _assert_calls_requests_with_url(self, original_url, expected_url, request_mock):
         self.client.request('METHOD', original_url)
-        expected_headers = {'Content-Type': 'application/json'}
         eq_(request_mock.call_args_list, [
-            mock.call('METHOD', expected_url, data='{}', headers=expected_headers)])
+            mock.call('METHOD', expected_url)])

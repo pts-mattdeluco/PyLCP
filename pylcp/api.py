@@ -1,5 +1,4 @@
 import logging
-import json
 
 import requests
 
@@ -15,27 +14,26 @@ class Client(object):
         self.shared_secret = shared_secret
         self.base_url = base_url
 
-    def post(self, url, **payload):
-        return self.request('POST', url, **payload)
+    def post(self, url, **kwargs):
+        kwargs.setdefault('headers', {'Content-Type': 'application/json'})
+        return self.request('POST', url, **kwargs)
 
     def get(self, url):
-        return self.request('GET', url)
+        return self.request('GET', url, headers={})
 
-    def request(self, method, url, **payload):
-        headers = {'Content-Type': 'application/json'}
+    def request(self, method, url, **kwargs):
         if not url.startswith('http'):
             url = self.base_url + url
-        logger.debug('%s to %s with %s', method, url, payload)
-        body = json.dumps(payload)
+        logger.debug('%s to %s with %s', method, url, kwargs)
         if self.key_id:
-            headers['Authorization'] = generate_authorization_header_value(
+            kwargs['headers']['Authorization'] = generate_authorization_header_value(
                 method,
                 url,
                 self.key_id,
                 self.shared_secret,
-                headers['Content-Type'],
-                body)
-
-        response = requests.request(method, url, data=body, headers=headers)
+                kwargs['headers'].get('Content-Type', ''),
+                kwargs.get('data', '')
+            )
+        response = requests.request(method, url, **kwargs)
         logger.debug('Got %s status code with body: \n%s', response.status_code, response.text)
         return response
