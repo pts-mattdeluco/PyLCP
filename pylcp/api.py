@@ -24,7 +24,6 @@ class Client(object):
     def request(self, method, url, **kwargs):
         if not url.startswith('http'):
             url = self.base_url + url
-        logger.debug('%s to %s with %s', method, url, kwargs)
         if self.key_id:
             kwargs['headers']['Authorization'] = generate_authorization_header_value(
                 method,
@@ -34,6 +33,7 @@ class Client(object):
                 kwargs['headers'].get('Content-Type', ''),
                 kwargs.get('data', '')
             )
+        logger.debug('%s to %s with %s', method, url, kwargs)
         response = requests.request(method, url, **kwargs)
         logger.debug('Got %s status code with body: \n%s', response.status_code, response.text)
         return response
