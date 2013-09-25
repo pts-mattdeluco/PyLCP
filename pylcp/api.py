@@ -50,13 +50,15 @@ class Client(object):
                     kwargs.get('data', '')
                 )
         request_logger.warning(
-            '---\n%s %s HTTP/1.0\n%s\n\n%s',
+            '------------------------------------------------------------\n'
+            '%s %s HTTP/1.0\n%s\n\n%s',
             method, url,
             format_headers(kwargs.get('headers', {})),
             prettify_alleged_json(kwargs.get('data', '')))
         response = requests.request(method, url, **kwargs)
         response_logger.warning(
-            '---\nHTTP/1.0 %d %s\n%s\n\n%s',
+            '------------------------------------------------------------\n'
+            'HTTP/1.0 %d %s\n%s\n\n%s',
             response.status_code, response.reason,
             format_headers(response.headers),
             prettify_alleged_json(response.text))
