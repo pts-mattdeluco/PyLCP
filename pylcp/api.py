@@ -49,14 +49,14 @@ class Client(object):
                     kwargs['headers'].get('Content-Type', ''),
                     kwargs.get('data', '')
                 )
-        request_logger.warning(
+        request_logger.debug(
             '------------------------------------------------------------\n'
             '%s %s HTTP/1.0\n%s\n\n%s',
             method, url,
             format_headers(kwargs.get('headers', {})),
             prettify_alleged_json(kwargs.get('data', '')))
         response = requests.request(method, url, **kwargs)
-        response_logger.warning(
+        response_logger.debug(
             '------------------------------------------------------------\n'
             'HTTP/1.0 %d %s\n%s\n\n%s',
             response.status_code, response.reason,
