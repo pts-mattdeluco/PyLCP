@@ -51,15 +51,19 @@ class Client(object):
                 )
         request_logger.debug(
             '------------------------------------------------------------\n'
-            '%s %s HTTP/1.0\n%s\n\n%s',
-            method, url,
-            format_headers(kwargs.get('headers', {})),
-            prettify_alleged_json(kwargs.get('data', '')))
+            '%(method)s %(url)s HTTP/1.0\n%(headers)s\n\n%(body)s',
+            {
+                'method': method,
+                'url': url,
+                'headers': format_headers(kwargs.get('headers', {})),
+                'body': prettify_alleged_json(kwargs.get('data', ''))})
         response = requests.request(method, url, **kwargs)
         response_logger.debug(
             '------------------------------------------------------------\n'
-            'HTTP/1.0 %d %s\n%s\n\n%s',
-            response.status_code, response.reason,
-            format_headers(response.headers),
-            prettify_alleged_json(response.text))
+            'HTTP/1.0 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s',
+            {
+                'status_code': response.status_code,
+                'reason': response.reason,
+                'headers': format_headers(response.headers),
+                'body': prettify_alleged_json(response.text)})
         return response
