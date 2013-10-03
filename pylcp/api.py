@@ -36,6 +36,9 @@ class Client(object):
     def get(self, url):
         return self.request('GET', url, headers={})
 
+    def delete(self, url):
+        return self.request('DELETE', url, headers={})
+
     def request(self, method, url, **kwargs):
         if not url.startswith('http'):
             url = self.base_url + url
