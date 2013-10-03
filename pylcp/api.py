@@ -33,8 +33,8 @@ class Client(object):
         kwargs.setdefault('headers', {'Content-Type': 'application/json'})
         return self.request('POST', url, **kwargs)
 
-    def get(self, url):
-        return self.request('GET', url, headers={})
+    def get(self, url, params=None):
+        return self.request('GET', url, headers={}, params=params)
 
     def delete(self, url):
         return self.request('DELETE', url, headers={})
