@@ -36,6 +36,9 @@ class Client(object):
     def get(self, url, params=None):
         return self.request('GET', url, headers={}, params=params)
 
+    def put(self, url, headers={}, params=None):
+        return self.request('PUT', url, headers=headers, params=params)
+
     def delete(self, url):
         return self.request('DELETE', url, headers={})
 
