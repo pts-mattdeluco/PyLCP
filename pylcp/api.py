@@ -4,6 +4,7 @@ import logging
 import requests
 
 from lcp.mac import generate_authorization_header_value
+from lcp import context
 
 
 logger = logging.getLogger(__name__)
@@ -73,3 +74,12 @@ class Client(object):
                 'headers': format_headers(response.headers),
                 'body': prettify_alleged_json(response.text)})
         return response
+
+
+class InternalClient(Client):
+
+    def request(self, method, url, **kwargs):
+        kwargs.setdefault('headers', {})
+        kwargs['headers'][context.HEADERS_MODE] = context.MODE_LIVE
+        kwargs['headers'][context.HEADERS_EXTERNAL_BASE_URL] = self.base_url
+        return super(InternalClient, self).request(method, url, **kwargs)
