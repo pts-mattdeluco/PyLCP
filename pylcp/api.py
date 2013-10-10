@@ -77,7 +77,12 @@ class Client(object):
 
 
 class InternalClient(Client):
-
+    """
+    A Client that makes requests to internal service URLs that aren't
+    normally accessible on a production system where all access must pass
+    throug the gateway. Since this bypasses the gateway, some additional headers
+    are added to requests that are normally added by the gateway.
+    """
     def request(self, method, url, **kwargs):
         kwargs.setdefault('headers', {})
         kwargs['headers'][context.HEADERS_MODE] = context.MODE_LIVE
