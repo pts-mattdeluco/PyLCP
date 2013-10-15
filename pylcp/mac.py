@@ -130,7 +130,7 @@ def generate_signature(mac_key, normalized_request_string):
 
 def verify_signature(mac_sign, shared_secret, normalized_request_string):
     """Determine if the request signature is valid i.e. it was signed with a
-    valid shared secret """
+    valid shared secret"""
     # TODO - ensure that the keymode (sandbox or live) matches the Host
     # appropriately.
 
