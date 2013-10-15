@@ -58,10 +58,10 @@ def put(url, **kwargs):
     return request('PUT', url, **kwargs)
 
 
-"""To help prevent reply attacks the timestamp of all requests can
-be no older than ```TIMESTAMP_MAX_SECONDS``` seconds before the current
-timestamp.  Also, because clocks can be out of sync we allow the timestamp to be
-up to ```TIMESTAMP_MAX_SECONDS``` in the future."""
+# To help prevent reply attacks the timestamp of all requests can
+# be no older than ```TIMESTAMP_MAX_SECONDS``` seconds before the current
+# timestamp.  Also, because clocks can be out of sync we allow the timestamp to
+# be up to ```TIMESTAMP_MAX_SECONDS``` in the future.
 TIMESTAMP_MAX_SECONDS = 30
 
 
@@ -85,7 +85,11 @@ def generate_ext(content_type, body):
     """Implements the notion of the ext as described in
     http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.1"""
 
-    if content_type is not None and body is not None and len(content_type) > 0 and len(body) > 0:
+    if (
+            content_type is not None and
+            body is not None and
+            len(content_type) > 0 and
+            len(body) > 0):
         content_type_plus_body = content_type + body
         content_type_plus_body_hash = hashlib.sha1(content_type_plus_body)
         ext = content_type_plus_body_hash.hexdigest()
@@ -94,7 +98,8 @@ def generate_ext(content_type, body):
     return ext
 
 
-def build_normalized_request_string(ts, nonce, http_method, host, port, request_path, ext):
+def build_normalized_request_string(
+        ts, nonce, http_method, host, port, request_path, ext):
     """Implements the notion of a normalized request string as described in
     http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.2.1"""
 
@@ -124,8 +129,10 @@ def generate_signature(mac_key, normalized_request_string):
 
 
 def verify_signature(mac_sign, shared_secret, normalized_request_string):
-    """ Determine if the request signature is valid i.e. it was signed with a valid shared secret """
-    # TODO - ensure that the keymode (sandbox or live) matches the Host appropriately.
+    """Determine if the request signature is valid i.e. it was signed with a
+    valid shared secret """
+    # TODO - ensure that the keymode (sandbox or live) matches the Host
+    # appropriately.
 
     if not keyczar.keys.HmacKey(shared_secret).Verify(
             normalized_request_string, keyczar.util.Base64WSDecode(mac_sign)):
@@ -185,6 +192,18 @@ class AuthHeaderValue(object):
     """As per http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02 create
     the value for the HTTP Authorization header using an existing hmac."""
 
+    auth_header_re = re.compile(
+        '^\s*'
+        'MAC\s+'
+        'id\s*\=\s*"(?P<mac_key_identifier>[^"]+)"\s*\,\s*'
+        'ts\s*\=\s*"(?P<ts>[^"]+)"\s*\,\s*'
+        'nonce\s*\=\s*"(?P<nonce>[^"]+)"\s*\,\s*'
+        'ext\s*\=\s*"(?P<ext>[^"]*)"\s*\,\s*'
+        'mac\s*\=\s*"(?P<mac>[^"]+)"\s*'
+        '$',
+        re.IGNORECASE
+    )
+
     def __init__(self, mac_key_identifier, ts, nonce, ext, mac):
         self.mac_key_identifier = mac_key_identifier
         self.ts = ts
@@ -193,14 +212,10 @@ class AuthHeaderValue(object):
         self.mac = mac
 
     def __str__(self):
-        fmt = 'MAC id="%s", ts="%s", nonce="%s", ext="%s", mac="%s"'
-        rv = fmt % (
-            self.mac_key_identifier,
-            self.ts,
-            self.nonce,
-            self.ext,
-            self.mac)
-        return rv
+        return (
+            'MAC id="{self.mac_key_identifier}", ts="{self.ts}", '
+            'nonce="{self.nonce}", ext="{self.ext}", mac="{self.mac}"'
+        ).format(self=self)
 
     @classmethod
     def parse(cls, value):
@@ -208,18 +223,10 @@ class AuthHeaderValue(object):
         header. If parsing is successful create and return a AuthHeaderValue
         otherwise raises InvalidAuthHeader"""
 
-        reg_ex_pattern = (
-            '^\s*'
-            'MAC\s+'
-            'id\s*\=\s*"(?P<mac_key_identifier>[^"]+)"\s*\,\s*'
-            'ts\s*\=\s*"(?P<ts>[^"]+)"\s*\,\s*'
-            'nonce\s*\=\s*"(?P<nonce>[^"]+)"\s*\,\s*'
-            'ext\s*\=\s*"(?P<ext>[^"]*)"\s*\,\s*'
-            'mac\s*\=\s*"(?P<mac>[^"]+)"\s*'
-            '$'
-        )
-        reg_ex = re.compile(reg_ex_pattern, re.IGNORECASE)
-        match = value and reg_ex.match(value)
+        match = None
+        if isinstance(value, basestring):
+            match = cls.auth_header_re.match(value)
+
         if not match:
             logger.warning(
                 "Invalid format for authorization header %r",
@@ -229,28 +236,5 @@ class AuthHeaderValue(object):
             "Valid format for authorization header %r",
             value)
 
-        assert 0 == match.start()
-        assert len(value) == match.end()
-        assert 5 == len(match.groups())
-
-        mac_key_identifier = match.group("mac_key_identifier")
-        assert mac_key_identifier
-        assert 0 < len(mac_key_identifier)
-
-        ts = match.group("ts")
-        assert ts
-        assert 0 < len(ts)
-
-        nonce = match.group("nonce")
-        assert nonce
-        assert 0 < len(nonce)
-
-        ext = match.group("ext")
-        assert ext is not None
-        assert 0 <= len(ext)
-
-        mac = match.group("mac")
-        assert mac
-        assert 0 < len(mac)
-
-        return cls(mac_key_identifier, ts, nonce, ext, mac)
+        values = match.groupdict()
+        return cls(**values)
