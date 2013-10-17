@@ -195,11 +195,11 @@ class AuthHeaderValue(object):
     auth_header_re = re.compile(
         '^\s*'
         'MAC\s+'
-        'id\s*\=\s*"(?P<mac_key_identifier>[^"]+)"\s*\,\s*'
-        'ts\s*\=\s*"(?P<ts>[^"]+)"\s*\,\s*'
-        'nonce\s*\=\s*"(?P<nonce>[^"]+)"\s*\,\s*'
-        'ext\s*\=\s*"(?P<ext>[^"]*)"\s*\,\s*'
-        'mac\s*\=\s*"(?P<mac>[^"]+)"\s*'
+        'id\s*=\s*"(?P<mac_key_identifier>[^"]+)"\s*\,\s*'
+        'ts\s*=\s*"(?P<ts>[^"]+)"\s*\,\s*'
+        'nonce\s*=\s*"(?P<nonce>[^"]+)"\s*\,\s*'
+        'ext\s*=\s*"(?P<ext>[^"]*)"\s*\,\s*'
+        'mac\s*=\s*"(?P<mac>[^"]+)"\s*'
         '$',
         re.IGNORECASE
     )
