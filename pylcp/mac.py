@@ -90,6 +90,13 @@ def generate_ext(content_type, body):
             body is not None and
             len(content_type) > 0 and
             len(body) > 0):
+        # Hasing requires a bytestring, so we need to encode back to utf-8
+        # in case the body/header have already been decoded to unicode (by the
+        # python json module for instance)
+        if isinstance(body, unicode):
+            body = body.encode('utf-8')
+        if isinstance(content_type, unicode):
+            content_type = content_type.encode('utf-8')
         content_type_plus_body = content_type + body
         content_type_plus_body_hash = hashlib.sha1(content_type_plus_body)
         ext = content_type_plus_body_hash.hexdigest()
