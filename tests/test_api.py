@@ -59,8 +59,8 @@ class TestApiClient(object):
         self.client.request('METHOD', '/url', headers={'Content-Type': 'application/json'})
         eq_(request_mock.call_args_list, [
             mock.call('METHOD', 'http://example.com/url', headers={
-                                                                   'Content-Type': 'application/json',
-                                                                   'Authorization': 'auth_value'})])
+                'Content-Type': 'application/json',
+                'Authorization': 'auth_value'})])
 
     @mock.patch('lcp.api.requests.request')
     def test_get_with_params_issues_a_GET_request_with_empty_headers_and_optional_params(self, request_mock):
@@ -75,6 +75,5 @@ class TestApiClient(object):
         eq_(request_mock.call_args_list, [
             mock.call('METHOD', 'BASE_URL/url', foo='bar',
                       headers={
-                               context.HEADERS_MODE: context.MODE_LIVE,
-                               context.HEADERS_EXTERNAL_BASE_URL: 'BASE_URL'},
-                      )])
+                                context.HEADERS_MODE: context.MODE_LIVE,
+                                context.HEADERS_EXTERNAL_BASE_URL: 'BASE_URL'})])
