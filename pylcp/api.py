@@ -4,7 +4,6 @@ import logging
 import requests
 
 from lcp.mac import generate_authorization_header_value
-from lcp import context
 
 
 logger = logging.getLogger(__name__)
@@ -75,17 +74,3 @@ class Client(object):
                 'headers': format_headers(response.headers),
                 'body': prettify_alleged_json(response.text)})
         return response
-
-
-class InternalClient(Client):
-    """
-    A Client that makes requests to internal service URLs that aren't
-    normally accessible on a production system where all access must pass
-    through the gateway. Since this bypasses the gateway, some additional headers
-    are added to requests that are normally added by the gateway.
-    """
-    def request(self, method, url, **kwargs):
-        kwargs.setdefault('headers', {})
-        kwargs['headers'][context.HEADERS_MODE] = context.MODE_LIVE
-        kwargs['headers'][context.HEADERS_EXTERNAL_BASE_URL] = self.base_url
-        return super(InternalClient, self).request(method, url, **kwargs)

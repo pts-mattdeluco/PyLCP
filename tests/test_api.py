@@ -2,7 +2,6 @@ from nose.tools import eq_
 import mock
 
 from lcp import api
-from lcp import context
 
 
 class TestApiClient(object):
@@ -67,14 +66,3 @@ class TestApiClient(object):
         self.client.get('/url', params="yada")
         eq_(request_mock.call_args_list, [
             mock.call('GET', 'BASE_URL/url', headers={}, params="yada")])
-
-    @mock.patch('requests.request')
-    def test_internal_client_adds_additional_headers(self, request_mock):
-        internal_client = api.InternalClient('BASE_URL')
-        internal_client.request('METHOD', '/url', foo='bar')
-        eq_(request_mock.call_args_list, [
-            mock.call(
-                'METHOD', 'BASE_URL/url', foo='bar',
-                headers={
-                    context.HEADERS_MODE: context.MODE_LIVE,
-                    context.HEADERS_EXTERNAL_BASE_URL: 'BASE_URL'})])
