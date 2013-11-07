@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import hmac
 import httplib
 import logging
 import os
@@ -7,7 +8,6 @@ import re
 import time
 import urlparse
 
-import keyczar.keys
 import requests
 
 
@@ -131,18 +131,16 @@ def generate_signature(mac_key, normalized_request_string):
     """Generate a request's MAC given a normalized request string (aka
     a summary of the key elements of the request and the mac key (shared
     secret)."""
-    return base64.b64encode(
-        keyczar.keys.HmacKey(mac_key).Sign(normalized_request_string))
+    key = base64.b64decode(mac_key.replace('-', '+').replace('_', '/') + '=')
+    signature = hmac.new(key, normalized_request_string, hashlib.sha1)
+    return base64.b64encode(signature.digest())
 
 
-def verify_signature(mac_sign, shared_secret, normalized_request_string):
+def verify_signature(mac_sign, mac_key, normalized_request_string):
     """Determine if the request signature is valid i.e. it was signed with a
     valid shared secret"""
-    # TODO - ensure that the keymode (sandbox or live) matches the Host
-    # appropriately.
-
-    if not keyczar.keys.HmacKey(shared_secret).Verify(
-            normalized_request_string, keyczar.util.Base64WSDecode(mac_sign)):
+    signature = generate_signature(mac_key, normalized_request_string)
+    if mac_sign != signature:
         raise InvalidSignature
 
 

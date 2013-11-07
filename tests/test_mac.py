@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 
 from mock import patch, call, sentinel
@@ -77,40 +78,35 @@ class GenerateNonceTestCase(unittest.TestCase):
 
 
 class GenerateSignatureTestCase(unittest.TestCase):
+    @patch('lcp.mac.base64.b64decode')
     @patch('lcp.mac.base64.b64encode')
-    @patch('lcp.mac.keyczar.keys.HmacKey')
-    def test_returns_signature(self, mock_HmacKey, mock_b64encode):
-        self.assertEquals(
-            mac.generate_signature(sentinel.MAC_KEY, sentinel.NORMALIZED_REQUEST_STRING),
-            mock_b64encode.return_value)
-        self.assertEquals(mock_b64encode.call_args_list, [
-            call(mock_HmacKey.return_value.Sign.return_value)])
-        self.assertEquals(mock_HmacKey.call_args_list, [call(sentinel.MAC_KEY)])
-        self.assertEquals(mock_HmacKey.return_value.Sign.call_args_list, [
-            call(sentinel.NORMALIZED_REQUEST_STRING)])
+    @patch('lcp.mac.hmac.new')
+    def test_returns_signature(self, hmac_new_mock, b64encode_mock, b64decode_mock):
+        b64decode_mock.return_value = 'test_key'
+        self.assertEqual(mac.generate_signature('test_key', 'test_nrs'),
+                         b64encode_mock.return_value)
+        self.assertEqual(b64encode_mock.call_args_list,
+                         [call(hmac_new_mock.return_value.digest.return_value)])
+        self.assertEqual(hmac_new_mock.call_args,
+                         call('test_key', 'test_nrs', hashlib.sha1))
 
 
 class VerifySignatureTestCase(unittest.TestCase):
-    @patch('lcp.mac.keyczar.util.Base64WSDecode')
-    @patch('lcp.mac.keyczar.keys.HmacKey')
-    def test_valid_signature_calls_HmacKey_verify(self, mock_HmacKey, mock_Base64WSDecode):
+    @patch('lcp.mac.generate_signature')
+    def test_verify_signature_calls_generate_signature(self, generate_signature_mock):
+        generate_signature_mock.return_value = sentinel.SIGNATURE
         mac.verify_signature(
-            sentinel.SIGNATURE, sentinel.SHARED_SECRET,
+            sentinel.SIGNATURE, sentinel.MAC_KEY,
             sentinel.NORMALIZED_REQUEST_STRING)
-        self.assertEquals(mock_HmacKey.call_args_list, [
-            call(sentinel.SHARED_SECRET)])
-        self.assertEquals(mock_Base64WSDecode.call_args_list, [
-            call(sentinel.SIGNATURE)])
-        self.assertEquals(mock_HmacKey.return_value.Verify.call_args_list, [
-            call(sentinel.NORMALIZED_REQUEST_STRING, mock_Base64WSDecode.return_value)])
+        self.assertEqual(generate_signature_mock.call_args,
+                         call(sentinel.MAC_KEY, sentinel.NORMALIZED_REQUEST_STRING))
 
-    @patch('lcp.mac.keyczar.util.Base64WSDecode')
-    @patch('lcp.mac.keyczar.keys.HmacKey')
-    def test_invalid_signature_raises(self, mock_HmacKey, mock_Base64WSDecode):
-        mock_HmacKey.return_value.Verify.return_value = False
+    @patch('lcp.mac.generate_signature')
+    def test_invalid_signature_raises(self, generate_signature_mock):
+        generate_signature_mock.return_value = sentinel.BAD_SIGNATURE
         with self.assertRaises(mac.InvalidSignature):
             mac.verify_signature(
-                sentinel.SIGNATURE, sentinel.SHARED_SECRET,
+                sentinel.SIGNATURE, sentinel.MAC_KEY,
                 sentinel.NORMALIZED_REQUEST_STRING)
 
 
