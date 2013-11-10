@@ -119,7 +119,7 @@ class TestGenerateAuthorizationHeaderValue(object):
         self.mock_generate_ext.return_value = 'EXT'
         self.mock_generate_signature.return_value = 'SIGNATURE'
 
-    def tearDown(self):
+    def teardown(self):
         patch.stopall()
 
     def test_returns_authorization_header_as_per_rfc(self):
@@ -146,7 +146,7 @@ class TestVerifyTimeStamp(object):
         self.mock_time = patch('lcp.mac.time.time', return_value=0).start()
         self.mock_logger = patch('lcp.mac.logger').start()
 
-    def tearDown(self):
+    def teardown(self):
         patch.stopall()
 
     def test_accepts_recent_timestamp_without_logging(self):
