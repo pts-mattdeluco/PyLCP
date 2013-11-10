@@ -107,7 +107,7 @@ class TestVerifySignature(object):
 
 
 class TestGenerateAuthorizationHeaderValue(object):
-    def setUp(self):
+    def setup(self):
         self.mock_time = patch('lcp.mac.time.time').start()
         self.mock_generate_nonce = patch('lcp.mac.generate_nonce').start()
         self.mock_generate_ext = patch('lcp.mac.generate_ext').start()
@@ -142,7 +142,7 @@ class TestGenerateAuthorizationHeaderValue(object):
 
 
 class TestVerifyTimeStamp(object):
-    def setUp(self):
+    def setup(self):
         self.mock_time = patch('lcp.mac.time.time', return_value=0).start()
         self.mock_logger = patch('lcp.mac.logger').start()
 
