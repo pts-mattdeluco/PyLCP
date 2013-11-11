@@ -1,50 +1,50 @@
 import hashlib
-import unittest
 
 from mock import patch, call, sentinel
+from nose.tools import assert_is_not_none, assert_raises, eq_
 
 from lcp import mac
 
 
-class GenerateExtTestCase(unittest.TestCase):
+class TestGenerateExt(object):
     def test_content_type_and_body_none_is_zero_length_ext(self):
         content_type = None
         body = None
         ext = mac.generate_ext(content_type, body)
-        self.assertIsNotNone(ext)
-        self.assertEqual(ext, "")
+        assert_is_not_none(ext)
+        eq_(ext, "")
 
     def test_content_type_and_body_zero_length_is_zero_length_ext(self):
         content_type = ''
         body = ''
         ext = mac.generate_ext(content_type, body)
-        self.assertIsNotNone(ext)
-        self.assertEqual(ext, "")
+        assert_is_not_none(ext)
+        eq_(ext, "")
 
     def test_content_type_non_none_and_body_none_is_zero_length_ext(self):
         content_type = "dave was here"
         body = None
         ext = mac.generate_ext(content_type, body)
-        self.assertIsNotNone(ext)
-        self.assertEqual(ext, "")
+        assert_is_not_none(ext)
+        eq_(ext, "")
 
     def test_content_type_none_and_body_non_none_is_zero_length_ext(self):
         content_type = None
         body = "dave was here"
         ext = mac.generate_ext(content_type, body)
-        self.assertIsNotNone(ext)
-        self.assertEqual(ext, "")
+        assert_is_not_none(ext)
+        eq_(ext, "")
 
     @patch('lcp.mac.hashlib.sha1')
     def test_content_type_and_body_non_none_returns_sha1_of_both(self, mock_sha1):
         content_type = "hello world!"
         body = "dave was here"
         ext = mac.generate_ext(content_type, body)
-        self.assertEqual(ext, mock_sha1.return_value.hexdigest.return_value)
-        self.assertEqual(mock_sha1.call_args_list, [call(content_type + body)])
+        eq_(ext, mock_sha1.return_value.hexdigest.return_value)
+        eq_(mock_sha1.call_args_list, [call(content_type + body)])
 
 
-class BuildNormalizedRequestStringTestCase(unittest.TestCase):
+class TestBuildNormalizedRequestString(object):
     def test_generate_concatenates_request_elements_as_per_rfc(self):
         # This is the example from the RFC:
         # http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.2.1
@@ -64,67 +64,62 @@ example.com
 80
 a,b,c
 '''
-        self.assertEqual(expected, actual)
+        eq_(expected, actual)
 
 
-class GenerateNonceTestCase(unittest.TestCase):
+class TestGenerateNonce(object):
     @patch('lcp.mac.base64.b64encode')
     @patch('lcp.mac.os.urandom')
     def test_returns_b64_encoded_random_string(self, mock_urandom, mock_b64encode):
-        self.assertEqual(mock_b64encode.return_value, mac.generate_nonce())
-        self.assertEqual(mock_b64encode.call_args_list, [
+        eq_(mock_b64encode.return_value, mac.generate_nonce())
+        eq_(mock_b64encode.call_args_list, [
             call(mock_urandom.return_value)])
-        self.assertEquals(mock_urandom.call_args_list, [call(8)])
+        eq_(mock_urandom.call_args_list, [call(8)])
 
 
-class GenerateSignatureTestCase(unittest.TestCase):
+class TestGenerateSignature(object):
     @patch('lcp.mac.base64.b64decode')
     @patch('lcp.mac.base64.b64encode')
     @patch('lcp.mac.hmac.new')
     def test_returns_signature(self, hmac_new_mock, b64encode_mock, b64decode_mock):
         b64decode_mock.return_value = 'test_key'
-        self.assertEqual(mac.generate_signature('test_key', 'test_nrs'),
-                         b64encode_mock.return_value)
-        self.assertEqual(b64encode_mock.call_args_list,
-                         [call(hmac_new_mock.return_value.digest.return_value)])
-        self.assertEqual(hmac_new_mock.call_args,
-                         call('test_key', 'test_nrs', hashlib.sha1))
+        eq_(mac.generate_signature('test_key', 'test_nrs'), b64encode_mock.return_value)
+        eq_(b64encode_mock.call_args_list, [call(hmac_new_mock.return_value.digest.return_value)])
+        eq_(hmac_new_mock.call_args, call('test_key', 'test_nrs', hashlib.sha1))
 
 
-class VerifySignatureTestCase(unittest.TestCase):
+class TestVerifySignature(object):
     @patch('lcp.mac.generate_signature')
     def test_verify_signature_calls_generate_signature(self, generate_signature_mock):
         generate_signature_mock.return_value = sentinel.SIGNATURE
         mac.verify_signature(
             sentinel.SIGNATURE, sentinel.MAC_KEY,
             sentinel.NORMALIZED_REQUEST_STRING)
-        self.assertEqual(generate_signature_mock.call_args,
-                         call(sentinel.MAC_KEY, sentinel.NORMALIZED_REQUEST_STRING))
+        eq_(generate_signature_mock.call_args, call(sentinel.MAC_KEY, sentinel.NORMALIZED_REQUEST_STRING))
 
     @patch('lcp.mac.generate_signature')
     def test_invalid_signature_raises(self, generate_signature_mock):
         generate_signature_mock.return_value = sentinel.BAD_SIGNATURE
-        with self.assertRaises(mac.InvalidSignature):
+        with assert_raises(mac.InvalidSignature):
             mac.verify_signature(
                 sentinel.SIGNATURE, sentinel.MAC_KEY,
                 sentinel.NORMALIZED_REQUEST_STRING)
 
 
-class GenerateAuthorizationHeaderValueTestCase(unittest.TestCase):
-    def setUp(self):
+class TestGenerateAuthorizationHeaderValue(object):
+    def setup(self):
         self.mock_time = patch('lcp.mac.time.time').start()
         self.mock_generate_nonce = patch('lcp.mac.generate_nonce').start()
         self.mock_generate_ext = patch('lcp.mac.generate_ext').start()
         self.mock_build_normalized_request_string = patch(
             'lcp.mac.build_normalized_request_string').start()
         self.mock_generate_signature = patch('lcp.mac.generate_signature').start()
-
         self.mock_time.return_value = 42
         self.mock_generate_nonce.return_value = 'NONCE'
         self.mock_generate_ext.return_value = 'EXT'
         self.mock_generate_signature.return_value = 'SIGNATURE'
 
-    def tearDown(self):
+    def teardown(self):
         patch.stopall()
 
     def test_returns_authorization_header_as_per_rfc(self):
@@ -132,56 +127,55 @@ class GenerateAuthorizationHeaderValueTestCase(unittest.TestCase):
         retval = mac.generate_authorization_header_value(
             'METHOD', 'http://HOST:8008/PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE',
             'BODY')
-        self.assertEquals(
+        eq_(
             retval, 'MAC id="KEY_ID", ts="42", nonce="NONCE", ext="EXT", mac="SIGNATURE"')
 
     def test_calls_all_dependencies(self):
         mac.generate_authorization_header_value(
-            'METHOD', 'http://HOST:8008/PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE',
-            'BODY')
-        self.assertEquals(self.mock_time.call_args_list, [call()])
-        self.assertEquals(self.mock_generate_nonce.call_args_list, [call()])
-        self.assertEquals(self.mock_generate_ext.call_args_list, [
+            'METHOD', 'http://HOST:8008/PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE', 'BODY')
+        eq_(self.mock_time.call_args_list, [call()])
+        eq_(self.mock_generate_nonce.call_args_list, [call()])
+        eq_(self.mock_generate_ext.call_args_list, [
             call('CONTENT_TYPE', 'BODY')])
-        self.assertEquals(self.mock_generate_signature.call_args_list, [
+        eq_(self.mock_generate_signature.call_args_list, [
             call('SECRET', self.mock_build_normalized_request_string.return_value)])
 
 
-class VerifyTimeStampTestCase(unittest.TestCase):
-    def setUp(self):
+class TestVerifyTimeStamp(object):
+    def setup(self):
         self.mock_time = patch('lcp.mac.time.time', return_value=0).start()
         self.mock_logger = patch('lcp.mac.logger').start()
 
-    def tearDown(self):
+    def teardown(self):
         patch.stopall()
 
     def test_accepts_recent_timestamp_without_logging(self):
         mac.verify_timestamp(-1)
-        self.assertEquals(self.mock_logger.warning.call_args_list, [])
-        self.assertEquals(self.mock_logger.info.call_args_list, [])
+        eq_(self.mock_logger.warning.call_args_list, [])
+        eq_(self.mock_logger.info.call_args_list, [])
 
     def test_accepts_timestamp_as_string(self):
         mac.verify_timestamp("-1")
 
     def test_accepts_and_logs_timestamp_a_little_in_the_future(self):
         mac.verify_timestamp(mac.TIMESTAMP_MAX_SECONDS)
-        self.assertEquals(self.mock_logger.info.call_args_list, [
+        eq_(self.mock_logger.info.call_args_list, [
             call("Accepting timestamp %ss in the future.", mac.TIMESTAMP_MAX_SECONDS)])
 
     def test_rejects_and_logs_timestamp_to_far_in_the_future(self):
-        with self.assertRaises(mac.InvalidTimeStamp):
+        with assert_raises(mac.InvalidTimeStamp):
             mac.verify_timestamp(mac.TIMESTAMP_MAX_SECONDS + 1)
-        self.assertEquals(self.mock_logger.warning.call_args_list, [
+        eq_(self.mock_logger.warning.call_args_list, [
             call("Rejecting timestamp %ss in the future.", mac.TIMESTAMP_MAX_SECONDS + 1)])
 
     def test_rejects_and_logs_timestamp_too_old(self):
-        with self.assertRaises(mac.InvalidTimeStamp):
+        with assert_raises(mac.InvalidTimeStamp):
             mac.verify_timestamp(-mac.TIMESTAMP_MAX_SECONDS - 1)
-        self.assertEquals(self.mock_logger.warning.call_args_list, [
+        eq_(self.mock_logger.warning.call_args_list, [
             call("Rejecting timestamp %ss in the past.", mac.TIMESTAMP_MAX_SECONDS + 1)])
 
 
-class AuthHeaderValueTestCase(unittest.TestCase):
+class TestAuthHeaderValue(object):
     def _create_ahv_str(
             self, mac_key_identifier='FAKE_ID', ts='42', nonce='FAKE_NONCE',
             ext='FAKE_EXT', mac='FAKE_MAC'):
@@ -190,27 +184,27 @@ class AuthHeaderValueTestCase(unittest.TestCase):
 
     def test_string_representation_include_all_parameters_as_per_rfc(self):
         actual = '%s' % mac.AuthHeaderValue('FAKE_ID', '42', 'FAKE_NONCE', 'FAKE_EXT', 'FAKE_MAC')
-        self.assertEquals(self._create_ahv_str(), actual)
+        eq_(self._create_ahv_str(), actual)
 
     def test_parse_extracts_all_parameters(self):
         actual = mac.AuthHeaderValue.parse(self._create_ahv_str())
-        self.assertEquals(actual.mac_key_identifier, 'FAKE_ID')
-        self.assertEquals(actual.ts, '42')
-        self.assertEquals(actual.nonce, 'FAKE_NONCE')
-        self.assertEquals(actual.ext, 'FAKE_EXT')
-        self.assertEquals(actual.mac, 'FAKE_MAC')
+        eq_(actual.mac_key_identifier, 'FAKE_ID')
+        eq_(actual.ts, '42')
+        eq_(actual.nonce, 'FAKE_NONCE')
+        eq_(actual.ext, 'FAKE_EXT')
+        eq_(actual.mac, 'FAKE_MAC')
 
     @patch('lcp.mac.logger')
     def test_parse_logs_valid_format(self, mock_logger):
         mac.AuthHeaderValue.parse(self._create_ahv_str())
-        self.assertEquals(mock_logger.info.call_args_list, [
+        eq_(mock_logger.info.call_args_list, [
             call("Valid format for authorization header %r", self._create_ahv_str())])
 
     @patch('lcp.mac.logger')
     def assert_parse_logs_and_raises(self, header_value, mock_logger):
-        with self.assertRaises(mac.InvalidAuthHeader):
+        with assert_raises(mac.InvalidAuthHeader):
             mac.AuthHeaderValue.parse(header_value)
-        self.assertEquals(mock_logger.warning.call_args_list, [
+        eq_(mock_logger.warning.call_args_list, [
             call("Invalid format for authorization header %r", header_value)])
 
     def test_parse_with_empty_mac_key_identifier_logs_and_raises(self):
