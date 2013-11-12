@@ -40,6 +40,10 @@ class Client(object):
         kwargs.setdefault('headers', {'Content-Type': 'application/json'})
         return self.request('PUT', url, **kwargs)
 
+    def patch(self, url, **kwargs):
+        kwargs.setdefault('headers', {'Content-Type': 'application/json'})
+        return self.request('PATCH', url, **kwargs)
+
     def delete(self, url):
         return self.request('DELETE', url, headers={})
 
