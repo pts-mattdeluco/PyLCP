@@ -58,7 +58,7 @@ def put(url, **kwargs):
     return request('PUT', url, **kwargs)
 
 
-# To help prevent reply attacks the timestamp of all requests can
+# To help prevent replay attacks the timestamp of all requests can
 # be no older than ```TIMESTAMP_MAX_SECONDS``` seconds before the current
 # timestamp.  Also, because clocks can be out of sync we allow the timestamp to
 # be up to ```TIMESTAMP_MAX_SECONDS``` in the future.
