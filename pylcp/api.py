@@ -62,7 +62,7 @@ class Client(object):
                 )
         request_logger.debug(
             '------------------------------------------------------------\n'
-            '%(method)s %(url)s HTTP/1.0\n%(headers)s\n\n%(body)s',
+            '%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s',
             {
                 'method': method,
                 'url': url,
@@ -71,7 +71,7 @@ class Client(object):
         response = requests.request(method, url, **kwargs)
         response_logger.debug(
             '------------------------------------------------------------\n'
-            'HTTP/1.0 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s',
+            'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s',
             {
                 'status_code': response.status_code,
                 'reason': response.reason,
