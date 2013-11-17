@@ -3,7 +3,7 @@ import logging
 
 import requests
 
-from lcp.mac import generate_authorization_header_value
+from pylcp.mac import generate_authorization_header_value
 
 
 logger = logging.getLogger(__name__)

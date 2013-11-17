@@ -1,7 +1,7 @@
 from nose.tools import eq_
 import mock
 
-from lcp import api
+from pylcp import api
 
 
 class TestApiClient(object):
@@ -50,7 +50,7 @@ class TestApiClient(object):
         eq_(request_mock.call_args_list, [
             mock.call('GET', 'BASE_URL/url', headers={}, params=None)])
 
-    @mock.patch('lcp.api.generate_authorization_header_value', return_value='auth_value')
+    @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
     @mock.patch('requests.request')
     def test_specifying_key_id_causes_Authorization_header_to_be_set(self, request_mock, auth_header_mock):
         self.client.base_url = 'http://example.com'

@@ -8,77 +8,8 @@ import re
 import time
 import urlparse
 
-import requests
-
 
 logger = logging.getLogger(__name__)
-
-
-def request(method, url, **kwargs):
-
-    if 'mac_key_identifier' in kwargs and 'mac_key' in kwargs:
-        auth_header = generate_authorization_header_value(
-            method,
-            url,
-            kwargs['mac_key_identifier'],
-            kwargs['mac_key'],
-            kwargs.get('headers', {}).get('Content-Type', ''),
-            kwargs.get('data', '')
-        )
-
-        kwargs.pop('mac_key_identifier')
-        kwargs.pop('mac_key')
-
-        kwargs['headers']['Authorization'] = auth_header
-
-    return requests.request(method, url, **kwargs)
-
-
-def delete(url, **kwargs):
-    return request('DELETE', url, **kwargs)
-
-
-def get(url, **kwargs):
-    return request('GET', url, **kwargs)
-
-
-def head(url, **kwargs):
-    return request('HEAD', url, **kwargs)
-
-
-def patch(url, **kwargs):
-    return request('PATCH', url, **kwargs)
-
-
-def post(url, **kwargs):
-    return request('POST', url, **kwargs)
-
-
-def put(url, **kwargs):
-    return request('PUT', url, **kwargs)
-
-
-# To help prevent replay attacks the timestamp of all requests can
-# be no older than ```TIMESTAMP_MAX_SECONDS``` seconds before the current
-# timestamp.  Also, because clocks can be out of sync we allow the timestamp to
-# be up to ```TIMESTAMP_MAX_SECONDS``` in the future.
-TIMESTAMP_MAX_SECONDS = 30
-
-
-class VerificationFailure(Exception):
-    """Base class for all possible signature verification failure exception."""
-
-
-class InvalidAuthHeader(VerificationFailure):
-    """The authorization header value invalid."""
-
-
-class InvalidTimeStamp(VerificationFailure):
-    """The timestamp is too old or too far in the future."""
-
-
-class InvalidSignature(VerificationFailure):
-    """The signature does not match."""
 
 
 def generate_ext(content_type, body):
@@ -136,14 +67,6 @@ def generate_signature(mac_key, normalized_request_string):
     return base64.b64encode(signature.digest())
 
 
-def verify_signature(mac_sign, mac_key, normalized_request_string):
-    """Determine if the request signature is valid i.e. it was signed with a
-    valid shared secret"""
-    signature = generate_signature(mac_key, normalized_request_string)
-    if mac_sign != signature:
-        raise InvalidSignature
-
-
 def generate_authorization_header_value(
         http_method,
         url,
@@ -180,19 +103,6 @@ def generate_authorization_header_value(
         signature)
 
 
-def verify_timestamp(ts):
-    now = time.time()
-    age = int(now) - int(ts)
-    if age > TIMESTAMP_MAX_SECONDS:
-        logger.warning("Rejecting timestamp %ss in the past.", age)
-        raise InvalidTimeStamp()
-    if (-age) > TIMESTAMP_MAX_SECONDS:
-        logger.warning("Rejecting timestamp %ss in the future.", -age)
-        raise InvalidTimeStamp()
-    if age < 0:
-        logger.info("Accepting timestamp %ss in the future.", -age)
-
-
 class AuthHeaderValue(object):
     """As per http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02 create
     the value for the HTTP Authorization header using an existing hmac."""
@@ -221,25 +131,3 @@ class AuthHeaderValue(object):
             'MAC id="{self.mac_key_identifier}", ts="{self.ts}", '
             'nonce="{self.nonce}", ext="{self.ext}", mac="{self.mac}"'
         ).format(self=self)
-
-    @classmethod
-    def parse(cls, value):
-        """Parse a string which is the value from an HTTP authorization
-        header. If parsing is successful create and return a AuthHeaderValue
-        otherwise raises InvalidAuthHeader"""
-
-        match = None
-        if isinstance(value, basestring):
-            match = cls.auth_header_re.match(value)
-
-        if not match:
-            logger.warning(
-                "Invalid format for authorization header %r",
-                value)
-            raise InvalidAuthHeader()
-        logger.info(
-            "Valid format for authorization header %r",
-            value)
-
-        values = match.groupdict()
-        return cls(**values)
