@@ -15,10 +15,13 @@ class TestApiClient(object):
             yield self._assert_calls_requests_with_url, absolute_url, absolute_url
 
     def test_request_adds_base_url_to_relative_urls(self):
-        for absolute_url in [
-                'some/relative/path/',
-                '/some/absolute/path']:
-            yield self._assert_calls_requests_with_url, absolute_url, 'BASE_URL' + absolute_url
+        self._assert_calls_requests_with_url('some/relative/path', 'BASE_URL/some/relative/path')
+        self._assert_calls_requests_with_url('/some/absolute/path', 'BASE_URL/some/absolute/path')
+
+    def test_request_adds_base_url_with_trailing_slash_to_relative_urls(self):
+        self.client = api.Client('BASE_URL/')
+        self._assert_calls_requests_with_url('some/relative/path', 'BASE_URL/some/relative/path')
+        self._assert_calls_requests_with_url('/some/absolute/path', 'BASE_URL/some/absolute/path')
 
     @mock.patch('requests.request')
     def _assert_calls_requests_with_url(self, original_url, expected_url, request_mock):

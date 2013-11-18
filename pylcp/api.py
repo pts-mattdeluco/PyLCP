@@ -4,6 +4,7 @@ import logging
 import requests
 
 from pylcp.mac import generate_authorization_header_value
+import pylcp.url
 
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ class Client(object):
 
     def request(self, method, url, **kwargs):
         if not url.startswith('http'):
-            url = self.base_url + url
+            url = pylcp.url.url_path_join(self.base_url, url)
         if self.key_id:
             kwargs['headers']['Authorization'] = \
                 generate_authorization_header_value(
