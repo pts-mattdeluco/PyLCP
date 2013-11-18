@@ -1,6 +1,10 @@
+# Necessary to supress on error at the completion of python setup.py test.
+# See http://bugs.python.org/issue15881#msg170215
+import multiprocessing
+
+import os
 import pkg_resources
 import setuptools
-import os
 
 
 def read_file(file_name):
