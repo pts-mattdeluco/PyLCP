@@ -1,0 +1,8 @@
+syntax: glob
+
+.env
+*.pyc
+dist/*
+PyLCP.egg-info/*
+
+requests-2.0.1-py2.7.egg/*

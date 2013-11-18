@@ -1,6 +1,6 @@
 from nose.tools import eq_
 
-from lcp_ui.url import url_path_join
+from pylcp.url import url_path_join
 
 
 class TestUrlPathJoin(object):
