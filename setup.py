@@ -21,7 +21,7 @@ def read_first_line(file_name):
 def read_requirements(file_path):
     return [
         i.strip()
-        for i in pkg_resources.resource_string(__name__, 'requirements.txt').split()
+        for i in pkg_resources.resource_string(__name__, file_path).split()
         if i.strip()[0:1] != '#' and i.strip()[0:2] != '--' and len(i.strip()) > 0
     ]
 
