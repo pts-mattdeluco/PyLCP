@@ -22,7 +22,7 @@ The example below shows how to submit a signed request to the LCP:
 
 References
 ----------
-For further information on the Loyalty Commercie Platform, see
+For further information on the Loyalty Commerce Platform, see
 http://points.github.io/Loyalty-Commerce-Platform/index.html
 
 The PyLCP library uses the Requests library for sending HTTP requests to the
