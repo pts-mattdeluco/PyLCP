@@ -1,8 +1,9 @@
-Python Client Library for Points Loyalty Commerce Platform
-==========================================================
+=====================================
+Using the |lib-full-name| for Testing
+=====================================
 
-This library provides a simple interface for submitting signed and unsigned
-requests to the Points Loyalty Commerce Platform (LCP):
+How it Works
+------------
 
 The example below shows how to submit an unsigned request to the LCP:
 

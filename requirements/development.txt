@@ -8,3 +8,4 @@ Pygments==1.6
 Sphinx==1.2b1
 
 teamcity-messages-pts==1.7.2
+releases==0.3.0
