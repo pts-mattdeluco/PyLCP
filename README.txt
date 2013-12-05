@@ -28,3 +28,8 @@ http://points.github.io/Loyalty-Commerce-Platform/index.html
 The PyLCP library uses the Requests library for sending HTTP requests to the
 LCP. In particular, responses are instances of the requests.Response class.
 For details on this library, see http://www.python-requests.org/en/latest/
+
+Developer Note
+--------------
+We want to open source this package on github eventually and for this reason would
+like to keep the footprint small. Hence pylcp is built minimally using setuptools.
