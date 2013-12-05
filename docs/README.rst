@@ -79,7 +79,7 @@ There are two requirements files in the `requirements` directory.
 Tests
 -----
 
-All new code must be tested with automated unit tests. Unit tests can be executed by running `paver unit_tests`.
+All new code must be tested with automated unit tests. Unit tests can be executed by running `paver test_units`.
 
 Other Documentation
 -------------------
