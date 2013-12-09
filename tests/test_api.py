@@ -36,6 +36,12 @@ class TestApiClient(object):
             mock.call('DELETE', 'BASE_URL/url', headers={})])
 
     @mock.patch('requests.request')
+    def test_options_issues_an_OPTIONS_request_with_empty_headers(self, request_mock):
+        self.client.options('/url')
+        eq_(request_mock.call_args_list, [
+            mock.call('OPTIONS', 'BASE_URL/url', headers={})])
+
+    @mock.patch('requests.request')
     def test_put_issues_a_PUT_request_with_json_content_type(self, request_mock):
         self.client.put('/url')
         eq_(request_mock.call_args_list, [

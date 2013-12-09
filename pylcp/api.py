@@ -37,6 +37,9 @@ class Client(object):
     def get(self, url, params=None):
         return self.request('GET', url, headers={}, params=params)
 
+    def options(self, url):
+        return self.request('OPTIONS', url, headers={})
+
     def put(self, url, **kwargs):
         kwargs.setdefault('headers', {'Content-Type': 'application/json'})
         return self.request('PUT', url, **kwargs)
