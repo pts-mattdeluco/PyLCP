@@ -14,16 +14,3 @@ POST_REQUEST_SCHEMA = {
         }
     }
 }
-
-
-PATCH_REQUEST_SCHEMA = {
-    'type': 'object',
-    'required': ['status'],
-    'additionalProperties': False,
-    'properties': {
-        'status': {
-            'enum': [constants.STATUS_SUCCESS],
-        },
-    }
-}
-
