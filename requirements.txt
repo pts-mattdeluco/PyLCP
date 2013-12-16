@@ -4,4 +4,3 @@
 
 requests==2.0.1
 jsonschema==2.3.0
-pciutils==0.0.7

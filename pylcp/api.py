@@ -1,10 +1,9 @@
 import json
 import logging
+import copy
 
 import requests
 
-import copy
-import pciutils
 
 from pylcp.mac import generate_authorization_header_value
 import pylcp.url
@@ -27,26 +26,38 @@ def prettify_alleged_json(text):
         return text
 
 
-def mask_data(data):
-    """
-        Given a json string or dict, return a masked copy in the data type you asked for
-    """
+def mask_credit_card(credit_card_number):
+    if credit_card_number is None:
+        return None
+
+    credit_card_number = str(credit_card_number)
+
+    return "X" * (len(credit_card_number) - 4) + credit_card_number[-4:]
+
+
+def mask_credit_card_data(data):
+
     if not data:
-        return ''
-    if isinstance(data, str):
-        return json.dumps(mask_data(json.loads(data)))
+        return
+    if isinstance(data, basestring):
+        try:
+            data = json.loads(data)
+        except ValueError:
+            return data
+        return json.dumps(mask_credit_card_data(json.loads(data)))
 
     copied_data = copy.deepcopy(data)
     if 'billingInfo' in copied_data:
-        if 'cardNumber' in copied_data['billingInfo']: 
-            card_number = copied_data.get('billingInfo').get('cardNumber')
-            copied_data['billingInfo']['cardNumber'] = pciutils.mask_credit_card(card_number)
+        if 'cardNumber' in copied_data['billingInfo']:
+            card_number = copied_data['billingInfo']['cardNumber']
+            copied_data['billingInfo']['cardNumber'] = mask_credit_card(card_number)
         if 'securityCode' in copied_data['billingInfo']:
             copied_data['billingInfo']['securityCode'] = 'XXX'
     return copied_data
 
 
 class Client(object):
+
     def __init__(self, base_url, key_id=None, shared_secret=None):
         self.key_id = key_id
         self.shared_secret = shared_secret
@@ -93,7 +104,7 @@ class Client(object):
                 'method': method,
                 'url': url,
                 'headers': format_headers(kwargs.get('headers', {})),
-                'body': prettify_alleged_json(mask_data(kwargs.get('data', '')))})
+                'body': prettify_alleged_json(mask_credit_card_data(kwargs.get('data', '')))})
         response = requests.request(method, url, **kwargs)
         response_logger.debug(
             '------------------------------------------------------------\n'
@@ -104,4 +115,3 @@ class Client(object):
                 'headers': format_headers(response.headers),
                 'body': prettify_alleged_json(response.text)})
         return response
-
