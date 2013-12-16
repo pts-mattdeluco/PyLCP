@@ -3,6 +3,9 @@ import logging
 
 import requests
 
+import copy
+import pciutils
+
 from pylcp.mac import generate_authorization_header_value
 import pylcp.url
 
@@ -22,6 +25,25 @@ def prettify_alleged_json(text):
         return json.dumps(json.loads(text), sort_keys=True, indent=2)
     except:
         return text
+
+
+def mask_data(data):
+    """
+        Given a json string or dict, return a masked copy in the data type you asked for
+    """
+    if not data:
+        return ''
+    if isinstance(data, str):
+        return json.dumps(mask_data(json.loads(data)))
+
+    copied_data = copy.deepcopy(data)
+    if 'billingInfo' in copied_data:
+        if 'cardNumber' in copied_data['billingInfo']: 
+            card_number = copied_data.get('billingInfo').get('cardNumber')
+            copied_data['billingInfo']['cardNumber'] = pciutils.mask_credit_card(card_number)
+        if 'securityCode' in copied_data['billingInfo']:
+            copied_data['billingInfo']['securityCode'] = 'XXX'
+    return copied_data
 
 
 class Client(object):
@@ -71,7 +93,7 @@ class Client(object):
                 'method': method,
                 'url': url,
                 'headers': format_headers(kwargs.get('headers', {})),
-                'body': prettify_alleged_json(kwargs.get('data', ''))})
+                'body': prettify_alleged_json(mask_data(kwargs.get('data', '')))})
         response = requests.request(method, url, **kwargs)
         response_logger.debug(
             '------------------------------------------------------------\n'
@@ -82,3 +104,4 @@ class Client(object):
                 'headers': format_headers(response.headers),
                 'body': prettify_alleged_json(response.text)})
         return response
+
