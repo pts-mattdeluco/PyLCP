@@ -1,6 +1,2 @@
---index-url=http://ops-build2.points.com:8000/pypi/
---extra-index-url=http://pypi.points.com/simple
---extra-index-url=http://pypi.python.org/simple/
-
 requests==2.0.1
 jsonschema==2.3.0
