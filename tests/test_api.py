@@ -76,7 +76,7 @@ class TestApiClient(object):
         eq_(request_mock.call_args_list, [
             mock.call('GET', 'BASE_URL/url', headers={}, params="yada")])
 
-    def test_when_mask_data_is_called_then_masking_happens_on_a_copy(self):
+    def test_when_mask_sensitive_data_is_called_then_masking_happens_on_a_copy(self):
         data = {
                    "amount": 20.11, 
                    "billingInfo": {
@@ -87,7 +87,7 @@ class TestApiClient(object):
                                    "state": "ON", 
                                    }, 
                    }
-        masked_data = api.mask_credit_card_data(data)
+        masked_data = api.mask_sensitive_data(data)
 
         eq_(masked_data['billingInfo']['cardNumber'], "XXXXXXXXXXXX1111")
         eq_(masked_data['billingInfo']['securityCode'], "XXX")
@@ -97,8 +97,8 @@ class TestApiClient(object):
         eq_(data['billingInfo']['securityCode'], "123")
 
     @mock.patch('requests.request')
-    @mock.patch('pylcp.api.mask_credit_card_data')
-    def test_post_mask_data_is_called_a_POST_request_with_json_content_type(self, mock_mask_credit_card_data, request_mock):
+    @mock.patch('pylcp.api.mask_sensitive_data')
+    def test_post_mask_data_is_called_a_POST_request_with_json_content_type(self, mock_mask_sensitive_data, request_mock):
         self.client.post('/url', data={"test":"test"})
-        eq_(mock_mask_credit_card_data.call_args_list, [
+        eq_(mock_mask_sensitive_data.call_args_list, [
             mock.call({'test': 'test'})])
