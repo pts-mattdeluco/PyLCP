@@ -44,7 +44,7 @@ def mask_sensitive_data(data):
             data = json.loads(data)
         except ValueError:
             return data
-        return json.dumps(mask_sensitive_data(json.loads(data)))
+        return json.dumps(mask_sensitive_data(data))
 
     copied_data = copy.deepcopy(data)
     if 'billingInfo' in copied_data:
