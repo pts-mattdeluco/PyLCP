@@ -34,7 +34,7 @@ Developer Notes
 We want to eventually open source this package on Github. We would
 like to keep the footprint small and use tools for building and testing that
 will be familiar to most Python developers. Hence PyLCP is built minimally
-using setuptools.
+using setuptools and does not depend on any internal packages.
 
 To run tests:
 
