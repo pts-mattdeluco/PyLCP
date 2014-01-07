@@ -1,6 +1,7 @@
-# Necessary to supress on error at the completion of python setup.py test.
+# Necessary to supress on error in Python 2.7.3 at the completion of
+# python setup.py test.
 # See http://bugs.python.org/issue15881#msg170215
-import multiprocessing
+import multiprocessing        # NOQA
 
 import os
 import pkg_resources
