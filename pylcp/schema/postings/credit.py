@@ -1,5 +1,3 @@
-import constants
-
 POST_REQUEST_SCHEMA = {
     'type': 'object',
     'additionalProperties': False,

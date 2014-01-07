@@ -26,4 +26,3 @@ PATCH_REQUEST_SCHEMA = {
         },
     }
 }
-
