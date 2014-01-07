@@ -1,7 +1,7 @@
 import hashlib
 
-from mock import patch, call, sentinel
-from nose.tools import assert_is_not_none, assert_raises, eq_
+from mock import patch, call
+from nose.tools import assert_is_not_none, eq_
 
 from pylcp import mac
 

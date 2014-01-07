@@ -22,12 +22,12 @@ class TestUrlPathJoin(object):
 
     def test_url_without_trailing_slash_and_part_with_leading_slash(self):
         eq_(
-            url_path_join(self.url , '/' + self.part),
+            url_path_join(self.url, '/' + self.part),
             'http://localhost/path/part'
         )
 
     def test_url_without_trailing_slash_and_part_without_leading_slash(self):
         eq_(
-            url_path_join(self.url , self.part),
+            url_path_join(self.url, self.part),
             'http://localhost/path/part'
         )

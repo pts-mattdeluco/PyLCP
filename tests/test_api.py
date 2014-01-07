@@ -78,15 +78,15 @@ class TestApiClient(object):
 
     def test_when_mask_sensitive_data_is_called_then_masking_happens_on_a_copy(self):
         data = {
-                   "amount": 20.11, 
-                   "billingInfo": {
-                                   "cardNumber": "4111111111111111", 
-                                   "cardType": "VISA", 
-                                   "email": "sonia.walia@points.com", 
-                                   "securityCode": "123", 
-                                   "state": "ON", 
-                                   }, 
-                   }
+            "amount": 20.11,
+            "billingInfo": {
+                "cardNumber": "4111111111111111",
+                "cardType": "VISA",
+                "email": "sonia.walia@points.com",
+                "securityCode": "123",
+                "state": "ON",
+            },
+        }
         masked_data = api.mask_sensitive_data(data)
 
         eq_(masked_data['billingInfo']['cardNumber'], "XXXXXXXXXXXX1111")
@@ -98,7 +98,8 @@ class TestApiClient(object):
 
     @mock.patch('requests.request')
     @mock.patch('pylcp.api.mask_sensitive_data')
-    def test_post_mask_data_is_called_a_POST_request_with_json_content_type(self, mock_mask_sensitive_data, request_mock):
-        self.client.post('/url', data={"test":"test"})
+    def test_post_mask_data_is_called_a_POST_request_with_json_content_type(
+            self, mock_mask_sensitive_data, request_mock):
+        self.client.post('/url', data={"test": "test"})
         eq_(mock_mask_sensitive_data.call_args_list, [
             mock.call({'test': 'test'})])
