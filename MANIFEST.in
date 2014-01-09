@@ -1,0 +1,3 @@
+include version_number.txt
+include requirements.txt
+include requirements-dev.txt

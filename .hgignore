@@ -1,0 +1,14 @@
+syntax: glob
+
+.env
+*.pyc
+dist/*
+PyLCP.egg-info/*
+
+flake8-2.1.0-py2.7.egg*
+jsonschema-2.3.0-py2.7.egg/*
+mccabe-0.2.1-py2.7.egg/*
+mock-1.0.1-py2.7.egg
+nose-1.3.0-py2.7.egg/*
+pep8-1.4.6-py2.7.egg/*
+requests-2.0.1-py2.7.egg/*
