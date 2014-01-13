@@ -34,7 +34,7 @@ TEST_REQUIREMENTS = read_requirements('requirements-dev.txt')
 setuptools.setup(name='PyLCP',
                  version=read_first_line('version_number.txt'),
                  description="Python client library for Points Loyalty Commerce Platform.",
-                 long_description=read_file('README.txt'),
+                 long_description=read_file('README.markdown'),
                  classifiers=[
                       'Development Status :: 3 - Alpha',
                       'Environment :: Web Environment',
