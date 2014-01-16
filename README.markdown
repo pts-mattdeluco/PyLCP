@@ -72,3 +72,24 @@ tests run cleanly.
 1. Create a pull request.
 
 1. Address any concerns identified during the review of the pull request.
+
+Merging Pull Requests
+---------------------
+
+For those with push permissions on the Points/PyLCP repo, please follow these
+steps to merge pull requests.
+
+1. Once the change has been reviewed and required changes made by the contributer,
+merge the pull request in to the main repo.
+
+1. If the merge was performed on a clone, push to GitHub.
+
+1. Wait for the [CI build](https://prod-builds-1.points.com:8112/viewType.html?buildTypeId=Development_DevPyLCP_PyLCP)
+to complete successfully on TeamCity.
+1. Edit version_number.txt and increment the version number. This change can be made in a clone of Points/PyLCP. A pull
+request from a fork is not necessary if the commit changes only version_number.txt.
+
+1. Push this change. This will trigger the [TeamCity
+build](https://prod-builds-1.points.com:8112/viewType.html?buildTypeId=Development_DevPyLCP_PyLCPPyPIDistribution) that deploys the package to Points'
+internal PyPI server <http://ops-build2.points.com:8000/>.
+
