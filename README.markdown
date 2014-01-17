@@ -1,9 +1,5 @@
-Python Client Library for Points Loyalty Commerce Platform
-==========================================================
-
-__IMPORTANT: The GitHub version of this library is still in development. Use
-the repo at [https://hg.points.com/hgweb.cgi/pylcp/](https://hg.points.com/hgweb.cgi/pylcp/)
-for now.__
+Python Client Library for the Points Loyalty Commerce Platform
+==============================================================
 
 This library provides a simple interface for submitting signed and unsigned
 requests to the Points Loyalty Commerce Platform (LCP):
@@ -33,14 +29,14 @@ References
 For further information on the Loyalty Commerce Platform, check out 
 the [Getting Started Guide](http://points.github.io/Loyalty-Commerce-Platform/index.html).
 
-
 The PyLCP library uses the [Requests](http://www.python-requests.org/en/latest/)
 library for sending HTTP requests to the
-LCP. In particular, responses are instances of the requests.Response class.
+LCP. In particular, responses are instances of the 
+[requests.Response](http://docs.python-requests.org/en/latest/api/#requests.Response) class.
 
 Developer Notes
 ---------------
-We want to eventually open source this package on GitHub. We would
+We want to eventually open source this package by making the GitHub repository public. We would
 like to keep the footprint small and use tools for building and testing that
 will be familiar to most Python developers. Hence PyLCP is built minimally
 using setuptools and does not depend on any internal packages.
@@ -61,26 +57,39 @@ changes to PyLCP in your LCP App project):
 
 Contributing to PyLCP
 ---------------------
-Several teams at Points are using PyLCP to build platform apps. If you have
-an idea to make this library more useful for other LCP App developers, we
+If you have an idea to make this library more useful for other LCP App developers, we
 welcome your contributions. Here is a rough guide for a process to follow:
+
+1. Fork the repo <https://github.com/Points/PyLCP> in to your GitHub account.
 
 1. Talk through your idea with a member of the platform team. They'll have
 ideas on how to make your feature fit with the LCP architecture and have
 applicability to the broadest set of app developers.
 
-2. Implement your changes on the dev_head branch. Commit, push and ensure you
-have a clean build on [TeamCity](https://prod-builds-1.points.com:8112/viewType.html?buildTypeId=Development_DevPyLCP_PyLCP).
+1. Implement your changes, commit, and push to your fork of the repo. Be sure the
+tests run cleanly.
 
-3. Create a code review in the PyLCP project on Crucible. In addition to
-members of the Platform team, ensure that other interested developers at
-Points are included to gain feedback.
+1. Create a pull request.
 
-4. Address any concerns identified, adding additional commits to the review
-as follow-up.
+1. Address any concerns identified during the review of the pull request.
 
-5. Once the code is done, increment the version number in version_number.txt
-and commit this change. As a rule, push all commits except version_number.txt
-in order to ensure a clean build. As a final step, edit, commit and push the
-change to version_number.txt to trigger the TeamCity build that deploys the
-new package to our internal PyPI server.
+Merging Pull Requests
+---------------------
+
+For those with push permissions on the Points/PyLCP repo, please follow these
+steps to merge pull requests.
+
+1. Once the change has been reviewed and required changes made by the contributer,
+merge the pull request in to the main repo.
+
+1. If the merge was performed on a clone, push to GitHub.
+
+1. Wait for the [CI build](https://prod-builds-1.points.com:8112/viewType.html?buildTypeId=Development_DevPyLCP_PyLCP)
+to complete successfully on TeamCity.
+1. Edit version_number.txt and increment the version number. This change can be made in a clone of Points/PyLCP. A pull
+request from a fork is not necessary if the commit changes only version_number.txt.
+
+1. Push this change. This will trigger the [TeamCity
+build](https://prod-builds-1.points.com:8112/viewType.html?buildTypeId=Development_DevPyLCP_PyLCPPyPIDistribution) that deploys the package to Points'
+internal PyPI server <http://ops-build2.points.com:8000/>.
+
