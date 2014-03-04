@@ -36,10 +36,22 @@ class TestApiClient(object):
             mock.call('DELETE', 'BASE_URL/url', headers={})])
 
     @mock.patch('requests.request')
+    def test_delete_issues_a_DELETE_request_with_headers(self, request_mock):
+        self.client.delete('/url', {'Header-Name': 'some header value'})
+        eq_(request_mock.call_args_list, [
+            mock.call('DELETE', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
+
+    @mock.patch('requests.request')
     def test_options_issues_an_OPTIONS_request_with_empty_headers(self, request_mock):
         self.client.options('/url')
         eq_(request_mock.call_args_list, [
             mock.call('OPTIONS', 'BASE_URL/url', headers={})])
+
+    @mock.patch('requests.request')
+    def test_options_issues_an_OPTIONS_request_with_headers(self, request_mock):
+        self.client.options('/url', {'Header-Name': 'some header value'})
+        eq_(request_mock.call_args_list, [
+            mock.call('OPTIONS', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
 
     @mock.patch('requests.request')
     def test_put_issues_a_PUT_request_with_json_content_type(self, request_mock):
@@ -58,6 +70,20 @@ class TestApiClient(object):
         self.client.get('/url')
         eq_(request_mock.call_args_list, [
             mock.call('GET', 'BASE_URL/url', headers={}, params=None)])
+
+    @mock.patch('requests.request')
+    def test_get_issues_a_GET_request_with_headers_and_params(self, request_mock):
+        self.client.get('/url', {'Header-Name': 'some header value'}, {'paramName': 'some param value'})
+        eq_(request_mock.call_args_list, [
+            mock.call('GET', 'BASE_URL/url', headers={'Header-Name': 'some header value'},
+                      params={'paramName': 'some param value'})])
+
+    @mock.patch('requests.request')
+    def test_get_issues_a_GET_request_with_headers_and_no_params(self, request_mock):
+        self.client.get('/url', {'Header-Name': 'some header value'})
+        eq_(request_mock.call_args_list, [
+            mock.call('GET', 'BASE_URL/url', headers={'Header-Name': 'some header value'},
+                      params=None)])
 
     @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
     @mock.patch('requests.request')
