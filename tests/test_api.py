@@ -33,11 +33,11 @@ class TestApiClient(object):
     def test_delete_issues_a_DELETE_request_with_empty_headers(self, request_mock):
         self.client.delete('/url')
         eq_(request_mock.call_args_list, [
-            mock.call('DELETE', 'BASE_URL/url', headers={})])
+            mock.call('DELETE', 'BASE_URL/url')])
 
     @mock.patch('requests.request')
     def test_delete_issues_a_DELETE_request_with_headers(self, request_mock):
-        self.client.delete('/url', {'Header-Name': 'some header value'})
+        self.client.delete('/url', headers={'Header-Name': 'some header value'})
         eq_(request_mock.call_args_list, [
             mock.call('DELETE', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
 
@@ -45,11 +45,11 @@ class TestApiClient(object):
     def test_options_issues_an_OPTIONS_request_with_empty_headers(self, request_mock):
         self.client.options('/url')
         eq_(request_mock.call_args_list, [
-            mock.call('OPTIONS', 'BASE_URL/url', headers={})])
+            mock.call('OPTIONS', 'BASE_URL/url')])
 
     @mock.patch('requests.request')
     def test_options_issues_an_OPTIONS_request_with_headers(self, request_mock):
-        self.client.options('/url', {'Header-Name': 'some header value'})
+        self.client.options('/url', headers={'Header-Name': 'some header value'})
         eq_(request_mock.call_args_list, [
             mock.call('OPTIONS', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
 
@@ -69,21 +69,14 @@ class TestApiClient(object):
     def test_get_issues_a_GET_request_with_empty_headers_and_no_params(self, request_mock):
         self.client.get('/url')
         eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url', headers={}, params=None)])
+            mock.call('GET', 'BASE_URL/url')])
 
     @mock.patch('requests.request')
     def test_get_issues_a_GET_request_with_headers_and_params(self, request_mock):
-        self.client.get('/url', {'Header-Name': 'some header value'}, {'paramName': 'some param value'})
+        self.client.get('/url', headers={'Header-Name': 'some header value'}, params={'paramName': 'some param value'})
         eq_(request_mock.call_args_list, [
             mock.call('GET', 'BASE_URL/url', headers={'Header-Name': 'some header value'},
                       params={'paramName': 'some param value'})])
-
-    @mock.patch('requests.request')
-    def test_get_issues_a_GET_request_with_headers_and_no_params(self, request_mock):
-        self.client.get('/url', {'Header-Name': 'some header value'})
-        eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url', headers={'Header-Name': 'some header value'},
-                      params=None)])
 
     @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
     @mock.patch('requests.request')
@@ -100,7 +93,7 @@ class TestApiClient(object):
     def test_get_with_params_issues_a_GET_request_with_empty_headers_and_optional_params(self, request_mock):
         self.client.get('/url', params="yada")
         eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url', headers={}, params="yada")])
+            mock.call('GET', 'BASE_URL/url', params="yada")])
 
     def test_when_mask_sensitive_data_is_called_then_masking_happens_on_a_copy(self):
         data = {

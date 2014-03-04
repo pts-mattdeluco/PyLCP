@@ -69,11 +69,11 @@ class Client(object):
         kwargs.setdefault('headers', {'Content-Type': 'application/json'})
         return self.request('POST', url, **kwargs)
 
-    def get(self, url, headers=None, params=None):
-        return self.request('GET', url, headers=headers or {}, params=params)
+    def get(self, url, **kwargs):
+        return self.request('GET', url, **kwargs)
 
-    def options(self, url, headers=None):
-        return self.request('OPTIONS', url, headers=headers or {})
+    def options(self, url, **kwargs):
+        return self.request('OPTIONS', url, **kwargs)
 
     def put(self, url, **kwargs):
         kwargs.setdefault('headers', {'Content-Type': 'application/json'})
@@ -83,8 +83,8 @@ class Client(object):
         kwargs.setdefault('headers', {'Content-Type': 'application/json'})
         return self.request('PATCH', url, **kwargs)
 
-    def delete(self, url, headers=None):
-        return self.request('DELETE', url, headers=headers or {})
+    def delete(self, url, **kwargs):
+        return self.request('DELETE', url, **kwargs)
 
     def request(self, method, url, **kwargs):
         if not url.startswith('http'):
