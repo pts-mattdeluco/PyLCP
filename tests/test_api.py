@@ -27,13 +27,13 @@ class TestApiClient(object):
     def _assert_calls_requests_with_url(self, original_url, expected_url, request_mock):
         self.client.request('METHOD', original_url)
         eq_(request_mock.call_args_list, [
-            mock.call('METHOD', expected_url)])
+            mock.call('METHOD', expected_url, headers={})])
 
     @mock.patch('requests.request')
-    def test_delete_issues_a_DELETE_request_with_empty_headers(self, request_mock):
+    def test_delete_issues_a_DELETE_request_with_none_headers(self, request_mock):
         self.client.delete('/url')
         eq_(request_mock.call_args_list, [
-            mock.call('DELETE', 'BASE_URL/url')])
+            mock.call('DELETE', 'BASE_URL/url', headers={})])
 
     @mock.patch('requests.request')
     def test_delete_issues_a_DELETE_request_with_headers(self, request_mock):
@@ -42,10 +42,10 @@ class TestApiClient(object):
             mock.call('DELETE', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
 
     @mock.patch('requests.request')
-    def test_options_issues_an_OPTIONS_request_with_empty_headers(self, request_mock):
+    def test_options_issues_an_OPTIONS_request_with_none_headers(self, request_mock):
         self.client.options('/url')
         eq_(request_mock.call_args_list, [
-            mock.call('OPTIONS', 'BASE_URL/url')])
+            mock.call('OPTIONS', 'BASE_URL/url', headers={})])
 
     @mock.patch('requests.request')
     def test_options_issues_an_OPTIONS_request_with_headers(self, request_mock):
@@ -92,10 +92,10 @@ class TestApiClient(object):
                 'Authorization': 'auth_value'})])
 
     @mock.patch('requests.request')
-    def test_get_with_params_issues_a_GET_request_with_empty_headers_and_optional_params(self, request_mock):
+    def test_get_with_params_issues_a_GET_request_with_none_headers_and_optional_params(self, request_mock):
         self.client.get('/url', params="yada")
         eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url', params="yada")])
+            mock.call('GET', 'BASE_URL/url', headers={}, params="yada")])
 
     def test_when_mask_sensitive_data_is_called_then_masking_happens_on_a_copy(self):
         data = {
