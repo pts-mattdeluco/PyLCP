@@ -87,7 +87,7 @@ class Client(object):
         return self.request('DELETE', url, **kwargs)
 
     def request(self, method, url, **kwargs):
-        kwargs['headers'] = kwargs.get('headers', {})
+        kwargs.setdefault('headers', {})
         if not url.startswith('http'):
             url = pylcp.url.url_path_join(self.base_url, url)
         if self.key_id:
