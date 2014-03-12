@@ -65,11 +65,13 @@ class TestApiClient(object):
         eq_(request_mock.call_args_list, [
             mock.call('POST', 'BASE_URL/url', headers={'Content-Type': 'application/json'})])
 
+    @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
     @mock.patch('requests.request')
-    def test_get_issues_a_GET_request_with_empty_headers_and_no_params(self, request_mock):
+    def test_get_issues_a_GET_request_with_none_headers_and_none_params(self, request_mock, auth_header_mock):
+        self.client.key_id = 'foobar'
         self.client.get('/url')
         eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url')])
+            mock.call('GET', 'BASE_URL/url', headers={'Authorization': 'auth_value'})])
 
     @mock.patch('requests.request')
     def test_get_issues_a_GET_request_with_headers_and_params(self, request_mock):
