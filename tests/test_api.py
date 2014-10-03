@@ -80,6 +80,12 @@ class TestApiClient(object):
         for absolute_url in ['http://www.points.com/', 'https://www.points.com/']:
             yield self._assert_calls_requests_with_url, absolute_url, absolute_url
 
+    def test_client_remembers_credentials(self):
+        client = api.Client(mock.sentinel.BASE_URL, mock.sentinel.KEY_ID, mock.sentinel.SHARED_SECRET)
+        eq_(mock.sentinel.BASE_URL, client.base_url)
+        eq_(mock.sentinel.KEY_ID, client.key_id)
+        eq_(mock.sentinel.SHARED_SECRET, client.shared_secret)
+
     def test_request_adds_base_url_to_relative_urls(self):
         self._assert_calls_requests_with_url('some/relative/path', 'http://BASE_URL/some/relative/path')
         self._assert_calls_requests_with_url('/some/absolute/path', 'http://BASE_URL/some/absolute/path')
