@@ -7,6 +7,15 @@ from pylcp import api
 class TestApiClient(object):
     def setup(self):
         self.client = api.Client('BASE_URL')
+        self.request_log_format_string = (
+            '------------------------------------------------------------\n'
+            '%(method)s %(url)s HTTP/1.1\n%'
+            '(headers)s\n\n%(body)s')
+        self.response_log_format_string = (
+            '------------------------------------------------------------\n'
+            'HTTP/1.1 %(status_code)d %(reason)s\n'
+            '%(headers)s\n\n'
+            '%(body)s')
 
     def test_request_does_not_alter_absolute_urls(self):
         for absolute_url in [
@@ -130,3 +139,51 @@ class TestApiClient(object):
         self.client.post('/url', data={"test": "test"})
         eq_(mock_mask_sensitive_data.call_args_list, [
             mock.call({'test': 'test'})])
+
+    def assert_loggers_called(self, log_data):
+        with mock.patch('pylcp.api.request_logger') as request_logger_mock:
+            with mock.patch('pylcp.api.response_logger') as response_logger_mock:
+                with mock.patch('requests.request') as request_mock:
+                    class ResponseData:
+                        status_code = 200
+                        reason = 'REASON'
+                        headers = {'HEADER_KEY': 'HEADER_VALUE'}
+                        text = "{'answer': 42}"
+
+                        def to_dict(self):
+                            return {
+                                'status_code': self.status_code,
+                                'reason': self.reason,
+                                'headers': api.format_headers(self.headers),
+                                'body': self.text,
+                            }
+
+                    response_data = ResponseData()
+                    request_mock.return_value = response_data
+                    self.client.post('/url', data=log_data['body'])
+                    eq_(
+                        [mock.call(self.request_log_format_string, log_data)],
+                        request_logger_mock.debug.call_args_list
+                    )
+                    eq_(
+                        [mock.call(self.response_log_format_string, response_data.to_dict())],
+                        response_logger_mock.debug.call_args_list
+                    )
+
+    def test_post_logs_with_json_data(self):
+        log_data = {
+            'url': 'BASE_URL/url',
+            'headers': 'Content-Type: application/json',
+            'body': {'answer': 42},
+            'method': 'POST'
+        }
+        self.assert_loggers_called(log_data)
+
+    def test_post_logs_with_non_json_data(self):
+        log_data = {
+            'url': 'BASE_URL/url',
+            'headers': 'Content-Type: application/json',
+            'body': 'This is not JSON',
+            'method': 'POST'
+        }
+        self.assert_loggers_called(log_data)
