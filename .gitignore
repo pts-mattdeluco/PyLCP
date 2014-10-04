@@ -1,7 +1,10 @@
+.coverage
 .env
+.noseids
 *.pyc
 dist/*
 PyLCP.egg-info/*
+test_results/*
 
 flake8-2.1.0-py2.7.egg*
 mccabe-0.2.1-py2.7.egg/*
