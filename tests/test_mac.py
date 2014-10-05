@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import hashlib
 
 from mock import patch, call
@@ -42,6 +44,14 @@ class TestGenerateExt(object):
         ext = mac.generate_ext(content_type, body)
         eq_(ext, mock_sha1.return_value.hexdigest.return_value)
         eq_(mock_sha1.call_args_list, [call(content_type + body)])
+
+    @patch('pylcp.mac.hashlib.sha1')
+    def test_unicode_content_type_and_body_returns_sha1_of_both(self, mock_sha1):
+        content_type = u"\u4f60\u597d\u4e16\u754c"
+        body = u"\u6234\u592b\u5728\u8fd9\u91cc"
+        ext = mac.generate_ext(content_type, body)
+        eq_(ext, mock_sha1.return_value.hexdigest.return_value)
+        eq_(mock_sha1.call_args_list, [call((content_type + body).encode('utf-8'))])
 
 
 class TestBuildNormalizedRequestString(object):
@@ -121,6 +131,38 @@ class TestGenerateAuthorizationHeaderValue(object):
             call('CONTENT_TYPE', 'BODY')])
         eq_(self.mock_generate_signature.call_args_list, [
             call('SECRET', self.mock_build_normalized_request_string.return_value)])
+
+    def test_defaults_to_http_port_for_http_scheme(self):
+        mac.generate_authorization_header_value(
+            'METHOD', 'http://HOST/PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE', 'BODY')
+        eq_(
+            [call(
+                str(self.mock_time.return_value),
+                self.mock_generate_nonce.return_value,
+                'METHOD',
+                'host',
+                '80',
+                '/PATH',
+                self.mock_generate_ext.return_value
+            )],
+            self.mock_build_normalized_request_string.call_args_list
+        )
+
+    def test_defaults_to_https_port_for_https_scheme(self):
+        mac.generate_authorization_header_value(
+            'METHOD', 'https://HOST/PATH', 'KEY_ID', 'SECRET', 'CONTENT_TYPE', 'BODY')
+        eq_(
+            [call(
+                str(self.mock_time.return_value),
+                self.mock_generate_nonce.return_value,
+                'METHOD',
+                'host',
+                '443',
+                '/PATH',
+                self.mock_generate_ext.return_value
+            )],
+            self.mock_build_normalized_request_string.call_args_list
+        )
 
 
 class TestAuthHeaderValue(object):
