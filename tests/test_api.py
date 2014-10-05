@@ -156,6 +156,12 @@ class TestApiClient(object):
             mock.call('OPTIONS', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
 
     @mock.patch('requests.request')
+    def test_patch_issues_a_PATCH_request_with_json_content_type(self, request_mock):
+        self.client.patch('/url')
+        eq_(request_mock.call_args_list, [
+            mock.call('PATCH', 'BASE_URL/url', headers={'Content-Type': 'application/json'})])
+
+    @mock.patch('requests.request')
     def test_put_issues_a_PUT_request_with_json_content_type(self, request_mock):
         self.client.put('/url')
         eq_(request_mock.call_args_list, [
