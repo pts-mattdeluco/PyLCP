@@ -1,7 +1,94 @@
-from nose.tools import eq_
+import collections
+
+from nose.tools import assert_is_none, eq_
 import mock
 
 from pylcp import api
+
+
+class TestHeaderFormatting(object):
+    def test_header_dict_formatted_as_string(self):
+        headers = collections.OrderedDict()
+        headers['header1'] = 'value1'
+        headers['header2'] = 'value2'
+        formatted_headers = 'header1: value1\nheader2: value2'
+        eq_(formatted_headers, api.format_headers(headers))
+
+    def test_empty_header_dict_formatted_as_empty_string(self):
+        eq_('', api.format_headers({}))
+
+
+class TestJsonPrettifying(object):
+    def setup(self):
+        self.indent_amount = 2
+
+    def test_prettified_json_is_indented(self):
+        eq_(
+            '{{\n{0}"answer": 42\n}}'.format(' ' * self.indent_amount),
+            api.prettify_alleged_json('{"answer": 42}')
+        )
+
+    def test_prettified_json_is_sorted(self):
+        eq_(
+            '{{\n{0}"x": 2, \n{0}"y": 1\n}}'.format(' ' * self.indent_amount),
+            api.prettify_alleged_json('{"y": 1, "x": 2}')
+        )
+
+    def test_non_json_is_not_prettified(self):
+        non_json = 'This is not JSON.'
+        eq_(non_json, api.prettify_alleged_json(non_json))
+
+
+class TestCreditCardDataMasking(object):
+    def test_none_is_not_masked(self):
+        assert_is_none(api.mask_credit_card_number(None))
+
+    def test_all_but_last_four_digits_are_masked(self):
+        card_number = '1234567890'
+        masked_card_number = api.mask_credit_card_number(card_number)
+        eq_(card_number[-4], masked_card_number[-4])
+        eq_(len(card_number), len(masked_card_number))
+        eq_('X' * (len(card_number) - 4), masked_card_number[:-4])
+
+
+class TestSensitiveDataMasking(object):
+    def setup(self):
+        self.unmasked = {
+            'billingInfo': {
+                'cardNumber': '1234567890123456',
+                'securityCode': '123',
+            },
+            'password': 'secret',
+            'language': 'Python',
+        }
+        self.masked = api.mask_sensitive_data(self.unmasked)
+
+    def test_non_data_is_not_masked(self):
+        assert_is_none(api.mask_sensitive_data(None))
+        assert_is_none(api.mask_sensitive_data(''))
+        assert_is_none(api.mask_sensitive_data([]))
+        assert_is_none(api.mask_sensitive_data({}))
+
+    def test_non_json_data_is_not_masked(self):
+        data = 'This is not JSON. cardNumber: 1234567890123456'
+        eq_(data, api.mask_sensitive_data(data))
+
+    def test_card_number_is_masked(self):
+        eq_('XXXXXXXXXXXX3456', self.masked['billingInfo']['cardNumber'])
+
+    def test_security_code_is_masked(self):
+        eq_('XXX', self.masked['billingInfo']['securityCode'])
+
+    def test_password_is_masked(self):
+        eq_('XXX', self.masked['password'])
+
+    def test_non_sensitive_data_is_not_masked(self):
+        eq_(self.unmasked['language'], self.masked['language'])
+
+    def test_json_in_a_string_is_masked(self):
+        unmasked_string = '{"billingInfo": {}, "password": "secret"}'
+        masked_string = '{"password": "XXX", "billingInfo": {}}'
+        eq_(masked_string, api.mask_sensitive_data(unmasked_string))
 
 
 class TestApiClient(object):
