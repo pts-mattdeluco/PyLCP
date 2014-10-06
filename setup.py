@@ -3,9 +3,18 @@
 # See http://bugs.python.org/issue15881#msg170215
 import multiprocessing        # NOQA
 
+import distutils.command.clean
 import os
 import pkg_resources
 import setuptools
+import subprocess
+
+
+class Clean(distutils.command.clean.clean):
+    def run(self):
+        subprocess.call('find . -name *.pyc -delete'.split(' '))
+        subprocess.call('rm -rf *.egg/ test_results/ .coverage .noseids'.split(' '))
+        distutils.command.clean.clean.run(self)
 
 
 def read_file(file_name):
@@ -62,5 +71,8 @@ setuptools.setup(name='PyLCP',
                  # -*- Entry points: -*-
                  """,
                  test_suite='nose.collector',
-                 tests_require=TEST_REQUIREMENTS
+                 tests_require=TEST_REQUIREMENTS,
+                 cmdclass={
+                     'clean': Clean
+                 },
                  )
