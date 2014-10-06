@@ -396,3 +396,14 @@ class TestApiClient(object):
             'method': 'POST'
         }
         self.assert_loggers_called(log_data)
+
+    def test_no_request_or_response_logging_if_not_debug_level(self):
+        api.request_logger.setLevel(logging.INFO)
+        api.response_logger.setLevel(logging.INFO)
+        with mock.patch('pylcp.api.request_logger') as request_logger_mock:
+            request_logger_mock.isEnabledFor.return_value = False
+            with mock.patch('pylcp.api.response_logger') as response_logger_mock:
+                response_logger_mock.isEnabledFor.return_value = False
+                self.client.post('/url', data='{}')
+                eq_([], request_logger_mock.debug.call_args_list)
+                eq_([], response_logger_mock.debug.call_args_list)
