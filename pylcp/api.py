@@ -14,14 +14,100 @@ request_logger = logging.getLogger(__name__ + '.request')
 response_logger = logging.getLogger(__name__ + '.response')
 
 
+LOG_SEPARATOR = '------------------------------------------------------------\n'
+REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + '%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s'
+RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + 'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
+
+
+class Client(requests.Session):
+    """
+    Client for making signed requests to the Points Loyalty Commerce Platform.
+    """
+    def __init__(self, base_url, key_id=None, shared_secret=None, *args, **kwargs):
+        super(Client, self).__init__(*args, **kwargs)
+        if key_id is not None:
+            self.auth = MACAuth(key_id, shared_secret)
+
+        self.base_url = base_url
+        self.key_id = key_id
+        self.shared_secret = shared_secret
+
+    def prepare_request(self, request):
+        if self.base_url and not request.url.startswith('http'):
+            request.url = pylcp.url.url_path_join(self.base_url, request.url)
+
+        if request.method.upper() in {'PATCH', 'POST', 'PUT'}:
+            request.headers.setdefault('content-type', 'application/json')
+        else:
+            request.headers.setdefault('content-type', '')
+
+        prepared_request = super(Client, self).prepare_request(request)
+        return prepared_request
+
+    def send(self, request, **kwargs):
+        self._log_request(request)
+        response = super(Client, self).send(request, **kwargs)
+        self._log_response(response)
+        return response
+
+    def _log_request(self, request):
+        if request_logger.isEnabledFor(logging.DEBUG):
+            request_logger.debug(
+                REQUEST_LOG_TEMPLATE,
+                {
+                    'method': request.method,
+                    'url': request.url,
+                    'headers': format_headers(request.headers),
+                    'body': get_masked_and_formatted_request_body(request),
+                }
+            )
+
+    def _log_response(self, response):
+        # don't bother processing if we're not going to log
+        if response_logger.isEnabledFor(logging.DEBUG):
+            response_logger.debug(
+                RESPONSE_LOG_TEMPLATE,
+                {
+                    'status_code': response.status_code,
+                    'reason': response.reason,
+                    'headers': format_headers(response.headers),
+                    'body': prettify_alleged_json(response.text),
+                }
+            )
+
+
+class MACAuth(requests.auth.AuthBase):
+    """
+    Attaches an authorization MAC header to the given request.
+    """
+    def __init__(self, key_id, shared_secret):
+        self.key_id = key_id
+        self.shared_secret = shared_secret
+
+    def __call__(self, request):
+        request.headers['Authorization'] = generate_authorization_header_value(
+            request.method,
+            request.url,
+            self.key_id,
+            self.shared_secret,
+            request.headers['content-type'],
+            request.body
+        )
+        return request
+
+
 def format_headers(headers):
     return '\n'.join(
         "{}: {}".format(k, v) for k, v in headers.items())
 
 
+def pretty_json_dumps(data):
+    return json.dumps(data, sort_keys=True, indent=2)
+
+
 def prettify_alleged_json(text):
     try:
-        return json.dumps(json.loads(text), sort_keys=True, indent=2)
+        return pretty_json_dumps(json.loads(text))
     except:
         return text
 
@@ -36,7 +122,6 @@ def mask_credit_card_number(credit_card_number):
 
 
 def mask_sensitive_data(data):
-
     if not data:
         return
     if isinstance(data, basestring):
@@ -51,70 +136,27 @@ def mask_sensitive_data(data):
         if 'cardNumber' in copied_data['billingInfo']:
             card_number = copied_data['billingInfo']['cardNumber']
             copied_data['billingInfo']['cardNumber'] = mask_credit_card_number(card_number)
+
         if 'securityCode' in copied_data['billingInfo']:
             copied_data['billingInfo']['securityCode'] = 'XXX'
+
     if 'password' in copied_data:
         copied_data['password'] = 'XXX'
+
     return copied_data
 
 
-class Client(object):
+def get_masked_and_formatted_request_body(request):
+    """
+    Prepares a request body for logging by masking sensitive fields and
+    formatting json data with indentation for readability.
+    """
+    if request.headers.get('content-type') == 'application/json' and request.body:
+        try:
+            data = json.loads(request.body)
+        except ValueError:
+            return request.body
+        masked_data = mask_sensitive_data(data)
+        return pretty_json_dumps(masked_data)
 
-    def __init__(self, base_url, key_id=None, shared_secret=None):
-        self.key_id = key_id
-        self.shared_secret = shared_secret
-        self.base_url = base_url
-
-    def post(self, url, **kwargs):
-        kwargs.setdefault('headers', {'Content-Type': 'application/json'})
-        return self.request('POST', url, **kwargs)
-
-    def get(self, url, **kwargs):
-        return self.request('GET', url, **kwargs)
-
-    def options(self, url, **kwargs):
-        return self.request('OPTIONS', url, **kwargs)
-
-    def put(self, url, **kwargs):
-        kwargs.setdefault('headers', {'Content-Type': 'application/json'})
-        return self.request('PUT', url, **kwargs)
-
-    def patch(self, url, **kwargs):
-        kwargs.setdefault('headers', {'Content-Type': 'application/json'})
-        return self.request('PATCH', url, **kwargs)
-
-    def delete(self, url, **kwargs):
-        return self.request('DELETE', url, **kwargs)
-
-    def request(self, method, url, **kwargs):
-        kwargs.setdefault('headers', {})
-        if not url.startswith('http'):
-            url = pylcp.url.url_path_join(self.base_url, url)
-        if self.key_id:
-            kwargs['headers']['Authorization'] = \
-                generate_authorization_header_value(
-                    method,
-                    url,
-                    self.key_id,
-                    self.shared_secret,
-                    kwargs['headers'].get('Content-Type', ''),
-                    kwargs.get('data', '')
-                )
-        request_logger.debug(
-            '------------------------------------------------------------\n'
-            '%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s',
-            {
-                'method': method,
-                'url': url,
-                'headers': format_headers(kwargs.get('headers', {})),
-                'body': prettify_alleged_json(mask_sensitive_data(kwargs.get('data', '')))})
-        response = requests.request(method, url, **kwargs)
-        response_logger.debug(
-            '------------------------------------------------------------\n'
-            'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s',
-            {
-                'status_code': response.status_code,
-                'reason': response.reason,
-                'headers': format_headers(response.headers),
-                'body': prettify_alleged_json(response.text)})
-        return response
+    return request.body

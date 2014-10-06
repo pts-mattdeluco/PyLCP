@@ -1,4 +1,4 @@
-import constants
+from . import constants
 
 POST_REQUEST_SCHEMA = {
     'type': 'object',

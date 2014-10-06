@@ -1,9 +1,61 @@
 import collections
+import json
+import logging
 
-from nose.tools import assert_is_none, eq_
+from nose.tools import assert_in, assert_is_none, eq_
 import mock
+import requests
+import requests.adapters
 
 from pylcp import api
+
+
+class MockRequestAdapter(requests.adapters.BaseAdapter):
+    """
+    A requests Transport Adapter which logs the request instead of making acutal
+    HTTP calls.
+
+    Provides methods for asserting various properties of the request.
+    """
+    def __init__(self, *args, **kwargs):
+        self.last_request = None
+        self.last_request_kwargs = None
+
+    def send(self, request, **kwargs):
+        self.last_request = request
+        self.last_request_kwargs = kwargs
+
+        response = mock.MagicMock()
+        response.request = request
+        response.connection = self
+        response.status_code = 200
+        response.is_redirect = False
+        response.reason = 'OK'
+        response.headers = {
+            'content-type': 'application/json',
+            'location': request.url,
+        }
+        response.text = request.body
+        return response
+
+    def close(self):
+        pass  # no connection to close
+
+    def assert_request_properties(self, **expected_properties):
+        for property_name, expected_value in expected_properties.items():
+            actual_value = getattr(self.last_request, property_name)
+            message = '{} did not match. Expected: {}, actual: {}'.format(property_name, expected_value, actual_value)
+            eq_(actual_value, expected_value, message)
+
+    def assert_headers_present(self, expected_headers):
+        for header_name, expected_value in expected_headers.items():
+            actual_value = self.last_request.headers.get(header_name)
+            message = 'Header {} did not match. Expected: {}, actual: {}'.format(
+                header_name,
+                expected_value,
+                actual_value,
+            )
+            eq_(actual_value, expected_value, message)
 
 
 class TestHeaderFormatting(object):
@@ -91,9 +143,47 @@ class TestSensitiveDataMasking(object):
         eq_(masked_string, api.mask_sensitive_data(unmasked_string))
 
 
-class TestApiClient(object):
+class TestMaskingAndFormattingOfRequestBody(object):
     def setup(self):
-        self.client = api.Client('BASE_URL')
+        self.request = requests.Request()
+        self.request.body = json.dumps({
+            'billingInfo': {
+                'cardNumber': '1234567890123456',
+                'securityCode': '123',
+            },
+            'password': 'secret',
+            'language': 'Python',
+        })
+        self.request.headers['content-type'] = 'application/json'
+
+    def test_json_request_body_is_masked_and_formatted(self):
+        result = api.get_masked_and_formatted_request_body(self.request)
+        expected = {
+            'billingInfo': {
+                'cardNumber': 'XXXXXXXXXXXX3456',
+                'securityCode': 'XXX',
+            },
+            'password': 'XXX',
+            'language': 'Python',
+        }
+        eq_(json.dumps(expected, indent=2, sort_keys=True), result)
+
+    def test_non_json_request_body_is_not_altered(self):
+        request = requests.Request()
+        request.body = 'This is not JSON'
+        request.headers['content-type'] = 'text/plain'
+        eq_(request.body, api.get_masked_and_formatted_request_body(request))
+
+    def test_non_json_request_body_with_json_content_type_is_not_altered(self):
+        self.request.body = 'This is not JSON'
+        eq_(self.request.body, api.get_masked_and_formatted_request_body(self.request))
+
+
+class TestApiClient(object):
+
+    def setup(self):
+        api.logger.setLevel(logging.DEBUG)
+        self.client, self.test_adapter = self._get_client_and_adapter(base_url='http://BASE_URL')
         self.request_log_format_string = (
             '------------------------------------------------------------\n'
             '%(method)s %(url)s HTTP/1.1\n%'
@@ -104,10 +194,42 @@ class TestApiClient(object):
             '%(headers)s\n\n'
             '%(body)s')
 
+    def _get_client_and_adapter(self, **client_kwargs):
+        test_adapter = MockRequestAdapter()
+        client = api.Client(**client_kwargs)
+        client.mount('http://', test_adapter)
+        client.mount('https://', test_adapter)
+        return client, test_adapter
+
+    def _assert_calls_requests_with_url(self, original_url, expected_url):
+        self.client.request('METHOD', original_url)
+        self.test_adapter.assert_request_properties(
+            method='METHOD',
+            url=expected_url,
+        )
+
+    def assert_loggers_called(self, log_data):
+        with mock.patch('pylcp.api.request_logger') as request_logger_mock:
+            with mock.patch('pylcp.api.response_logger') as response_logger_mock:
+                self.client.post('/url', data=json.dumps(log_data['body']))
+
+                eq_(self.request_log_format_string, request_logger_mock.debug.call_args_list[0][0][0])
+                log_format_dict = request_logger_mock.debug.call_args_list[0][0][1]
+                eq_(log_data['url'], log_format_dict['url'])
+                eq_(log_data['body'], json.loads(log_format_dict['body']))
+                eq_(log_data['method'], log_format_dict['method'])
+                assert_in(log_data['headers'], log_format_dict['headers'])
+
+                eq_(self.response_log_format_string, response_logger_mock.debug.call_args_list[0][0][0])
+                log_format_dict = response_logger_mock.debug.call_args_list[0][0][1]
+                eq_(log_data['body'], json.loads(log_format_dict['body']))
+                eq_(200, log_format_dict['status_code'])
+                eq_('OK', log_format_dict['reason'])
+                assert_in(log_data['headers'], log_format_dict['headers'])
+                assert_in('location: ' + log_data['url'], log_format_dict['headers'])
+
     def test_request_does_not_alter_absolute_urls(self):
-        for absolute_url in [
-                'http://www.points.com',
-                'https://www.points.com']:
+        for absolute_url in ['http://www.points.com/', 'https://www.points.com/']:
             yield self._assert_calls_requests_with_url, absolute_url, absolute_url
 
     def test_client_remembers_credentials(self):
@@ -117,95 +239,110 @@ class TestApiClient(object):
         eq_(mock.sentinel.SHARED_SECRET, client.shared_secret)
 
     def test_request_adds_base_url_to_relative_urls(self):
-        self._assert_calls_requests_with_url('some/relative/path', 'BASE_URL/some/relative/path')
-        self._assert_calls_requests_with_url('/some/absolute/path', 'BASE_URL/some/absolute/path')
+        self._assert_calls_requests_with_url('some/relative/path', 'http://BASE_URL/some/relative/path')
+        self._assert_calls_requests_with_url('/some/absolute/path', 'http://BASE_URL/some/absolute/path')
 
     def test_request_adds_base_url_with_trailing_slash_to_relative_urls(self):
-        self.client = api.Client('BASE_URL/')
-        self._assert_calls_requests_with_url('some/relative/path', 'BASE_URL/some/relative/path')
-        self._assert_calls_requests_with_url('/some/absolute/path', 'BASE_URL/some/absolute/path')
+        self.client.base_url = 'http://BASE_URL/'
+        self._assert_calls_requests_with_url('some/relative/path', 'http://BASE_URL/some/relative/path')
+        self._assert_calls_requests_with_url('/some/absolute/path', 'http://BASE_URL/some/absolute/path')
 
-    @mock.patch('requests.request')
-    def _assert_calls_requests_with_url(self, original_url, expected_url, request_mock):
-        self.client.request('METHOD', original_url)
-        eq_(request_mock.call_args_list, [
-            mock.call('METHOD', expected_url, headers={})])
-
-    @mock.patch('requests.request')
-    def test_delete_issues_a_DELETE_request_with_none_headers(self, request_mock):
+    def test_delete_issues_a_DELETE_request_with_none_headers(self):
         self.client.delete('/url')
-        eq_(request_mock.call_args_list, [
-            mock.call('DELETE', 'BASE_URL/url', headers={})])
+        self.test_adapter.assert_request_properties(
+            method='DELETE',
+            url='http://BASE_URL/url',
+        )
 
-    @mock.patch('requests.request')
-    def test_delete_issues_a_DELETE_request_with_headers(self, request_mock):
-        self.client.delete('/url', headers={'Header-Name': 'some header value'})
-        eq_(request_mock.call_args_list, [
-            mock.call('DELETE', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
+    def test_delete_issues_a_DELETE_request_with_custom_headers(self):
+        headers = {'Header-Name': 'some header value'}
+        self.client.delete('/url', headers=headers)
+        self.test_adapter.assert_request_properties(
+            method='DELETE',
+            url='http://BASE_URL/url',
+        )
+        self.test_adapter.assert_headers_present(headers)
 
-    @mock.patch('requests.request')
-    def test_options_issues_an_OPTIONS_request_with_none_headers(self, request_mock):
+    def test_options_issues_an_OPTIONS_request_with_none_headers(self):
         self.client.options('/url')
-        eq_(request_mock.call_args_list, [
-            mock.call('OPTIONS', 'BASE_URL/url', headers={})])
+        self.test_adapter.assert_request_properties(
+            method='OPTIONS',
+            url='http://BASE_URL/url',
+        )
 
-    @mock.patch('requests.request')
-    def test_options_issues_an_OPTIONS_request_with_headers(self, request_mock):
-        self.client.options('/url', headers={'Header-Name': 'some header value'})
-        eq_(request_mock.call_args_list, [
-            mock.call('OPTIONS', 'BASE_URL/url', headers={'Header-Name': 'some header value'})])
+    def test_options_issues_an_OPTIONS_request_with_headers(self):
+        headers = {'Header-Name': 'some header value'}
+        self.client.options('/url', headers=headers)
+        self.test_adapter.assert_request_properties(
+            method='OPTIONS',
+            url='http://BASE_URL/url',
+        )
+        self.test_adapter.assert_headers_present(headers)
 
-    @mock.patch('requests.request')
-    def test_patch_issues_a_PATCH_request_with_json_content_type(self, request_mock):
+    def test_patch_issues_a_PATCH_request_with_json_content_type(self):
         self.client.patch('/url')
-        eq_(request_mock.call_args_list, [
-            mock.call('PATCH', 'BASE_URL/url', headers={'Content-Type': 'application/json'})])
+        self.test_adapter.assert_request_properties(
+            method='PATCH',
+            url='http://BASE_URL/url'
+        )
 
-    @mock.patch('requests.request')
-    def test_put_issues_a_PUT_request_with_json_content_type(self, request_mock):
+    def test_put_issues_a_PUT_request_with_json_content_type(self):
         self.client.put('/url')
-        eq_(request_mock.call_args_list, [
-            mock.call('PUT', 'BASE_URL/url', headers={'Content-Type': 'application/json'})])
+        self.test_adapter.assert_request_properties(
+            method='PUT',
+            url='http://BASE_URL/url',
+        )
+        self.test_adapter.assert_headers_present({'content-type': 'application/json'})
 
-    @mock.patch('requests.request')
-    def test_post_issues_a_POST_request_with_json_content_type(self, request_mock):
-        self.client.post('/url')
-        eq_(request_mock.call_args_list, [
-            mock.call('POST', 'BASE_URL/url', headers={'Content-Type': 'application/json'})])
-
-    @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
-    @mock.patch('requests.request')
-    def test_get_issues_a_GET_request_with_none_headers_and_none_params(self, request_mock, auth_header_mock):
-        self.client.key_id = 'foobar'
-        self.client.get('/url')
-        eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url', headers={'Authorization': 'auth_value'})])
-
-    @mock.patch('requests.request')
-    def test_get_issues_a_GET_request_with_headers_and_params(self, request_mock):
-        self.client.get('/url', headers={'Header-Name': 'some header value'}, params={'paramName': 'some param value'})
-        eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url', headers={'Header-Name': 'some header value'},
-                      params={'paramName': 'some param value'})])
+    def test_post_issues_a_POST_request_with_json_content_type(self):
+        self.client.post('/url', data={})
+        self.test_adapter.assert_request_properties(
+            method='POST',
+            url='http://BASE_URL/url',
+        )
+        self.test_adapter.assert_headers_present({'content-type': 'application/json'})
 
     @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
-    @mock.patch('requests.request')
-    def test_specifying_key_id_causes_Authorization_header_to_be_set(self, request_mock, auth_header_mock):
-        self.client.base_url = 'http://example.com'
-        self.client.key_id = 'foobar'
-        self.client.request('METHOD', '/url', headers={'Content-Type': 'application/json'})
-        eq_(request_mock.call_args_list, [
-            mock.call('METHOD', 'http://example.com/url', headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'auth_value'})])
+    def test_get_issues_a_GET_request_with_none_headers_and_none_params(self, auth_header_mock):
+        client, test_adapter = self._get_client_and_adapter(
+            base_url='http://BASE_URL',
+            key_id='foobar',
+        )
 
-    @mock.patch('requests.request')
-    def test_get_with_params_issues_a_GET_request_with_none_headers_and_optional_params(self, request_mock):
-        self.client.get('/url', params="yada")
-        eq_(request_mock.call_args_list, [
-            mock.call('GET', 'BASE_URL/url', headers={}, params="yada")])
+        client.get('/url')
+        test_adapter.assert_request_properties(
+            method='GET',
+            url='http://BASE_URL/url',
+        )
+        test_adapter.assert_headers_present({'Authorization': 'auth_value'})
 
-    def test_when_mask_sensitive_data_is_called_then_masking_happens_on_a_copy(self):
+    def test_get_issues_a_GET_request_with_headers_and_params(self):
+        headers = {'Header-Name': 'some header value'}
+        params = {'paramName': 'param_value'}
+
+        self.client.get('/url', headers=headers, params=params)
+        self.test_adapter.assert_request_properties(
+            method='GET',
+            url='http://BASE_URL/url?paramName=param_value',
+        )
+        self.test_adapter.assert_headers_present(headers)
+
+    @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
+    def test_specifying_key_id_causes_Authorization_header_to_be_set(self, auth_header_mock):
+        client, test_adapter = self._get_client_and_adapter(
+            base_url='http://BASE_URL',
+            key_id='foobar',
+        )
+
+        client.request('METHOD', '/url', headers={'Content-Type': 'application/json'})
+
+        test_adapter.assert_request_properties(
+            method='METHOD',
+            url='http://BASE_URL/url',
+        )
+        test_adapter.assert_headers_present({'Authorization': 'auth_value'})
+
+    def test_mask_sensitive_data_cleans_a_copy_of_data(self):
         data = {
             "amount": 20.11,
             "billingInfo": {
@@ -225,48 +362,27 @@ class TestApiClient(object):
         eq_(data['billingInfo']['cardNumber'], "4111111111111111")
         eq_(data['billingInfo']['securityCode'], "123")
 
-    @mock.patch('requests.request')
     @mock.patch('pylcp.api.mask_sensitive_data')
-    def test_post_mask_data_is_called_a_POST_request_with_json_content_type(
-            self, mock_mask_sensitive_data, request_mock):
-        self.client.post('/url', data={"test": "test"})
+    def test_mask_data_is_during_post_request(self, mask_sensitive_data_mock):
+        json_data = '{"test": "test"}'
+        mask_sensitive_data_mock.return_value = json_data
+        api.logger.setLevel(logging.DEBUG)
+        self.client.post('/url', data=json_data)
+        eq_(mask_sensitive_data_mock.call_args_list, [mock.call({'test': 'test'})])
+
+    @mock.patch('pylcp.api.mask_sensitive_data')
+    def test_mask_data_is_called_during_a_POST_request_with_json_content_type(
+            self, mock_mask_sensitive_data):
+        data = {"test": "test"}
+        mock_mask_sensitive_data.return_value = data
+        self.client.post('/url', data=json.dumps(data))
         eq_(mock_mask_sensitive_data.call_args_list, [
-            mock.call({'test': 'test'})])
-
-    def assert_loggers_called(self, log_data):
-        with mock.patch('pylcp.api.request_logger') as request_logger_mock:
-            with mock.patch('pylcp.api.response_logger') as response_logger_mock:
-                with mock.patch('requests.request') as request_mock:
-                    class ResponseData:
-                        status_code = 200
-                        reason = 'REASON'
-                        headers = {'HEADER_KEY': 'HEADER_VALUE'}
-                        text = "{'answer': 42}"
-
-                        def to_dict(self):
-                            return {
-                                'status_code': self.status_code,
-                                'reason': self.reason,
-                                'headers': api.format_headers(self.headers),
-                                'body': self.text,
-                            }
-
-                    response_data = ResponseData()
-                    request_mock.return_value = response_data
-                    self.client.post('/url', data=log_data['body'])
-                    eq_(
-                        [mock.call(self.request_log_format_string, log_data)],
-                        request_logger_mock.debug.call_args_list
-                    )
-                    eq_(
-                        [mock.call(self.response_log_format_string, response_data.to_dict())],
-                        response_logger_mock.debug.call_args_list
-                    )
+            mock.call(data)])
 
     def test_post_logs_with_json_data(self):
         log_data = {
-            'url': 'BASE_URL/url',
-            'headers': 'Content-Type: application/json',
+            'url': 'http://BASE_URL/url',
+            'headers': 'content-type: application/json',
             'body': {'answer': 42},
             'method': 'POST'
         }
@@ -274,8 +390,8 @@ class TestApiClient(object):
 
     def test_post_logs_with_non_json_data(self):
         log_data = {
-            'url': 'BASE_URL/url',
-            'headers': 'Content-Type: application/json',
+            'url': 'http://BASE_URL/url',
+            'headers': 'content-type: application/json',
             'body': 'This is not JSON',
             'method': 'POST'
         }
