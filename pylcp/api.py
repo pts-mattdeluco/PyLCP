@@ -29,6 +29,8 @@ class Client(requests.Session):
             self.auth = MACAuth(key_id, shared_secret)
 
         self.base_url = base_url
+        self.key_id = key_id
+        self.shared_secret = shared_secret
 
     def prepare_request(self, request):
         if self.base_url and not request.url.startswith('http'):
@@ -49,7 +51,6 @@ class Client(requests.Session):
         return response
 
     def _log_request(self, request):
-        # don't bother processing if we're not going to log
         if request_logger.isEnabledFor(logging.DEBUG):
             request_logger.debug(
                 REQUEST_LOG_TEMPLATE,
@@ -123,6 +124,12 @@ def mask_credit_card_number(credit_card_number):
 def mask_sensitive_data(data):
     if not data:
         return
+    if isinstance(data, basestring):
+        try:
+            data = json.loads(data)
+        except ValueError:
+            return data
+        return json.dumps(mask_sensitive_data(data))
 
     copied_data = copy.deepcopy(data)
     if 'billingInfo' in copied_data:
@@ -145,7 +152,10 @@ def get_masked_and_formatted_request_body(request):
     formatting json data with indentation for readability.
     """
     if request.headers.get('content-type') == 'application/json' and request.body:
-        data = json.loads(request.body)
+        try:
+            data = json.loads(request.body)
+        except ValueError:
+            return request.body
         masked_data = mask_sensitive_data(data)
         return pretty_json_dumps(masked_data)
 
