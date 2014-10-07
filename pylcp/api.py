@@ -63,7 +63,6 @@ class Client(requests.Session):
             )
 
     def _log_response(self, response):
-        # don't bother processing if we're not going to log
         if response_logger.isEnabledFor(logging.DEBUG):
             response_logger.debug(
                 RESPONSE_LOG_TEMPLATE,
