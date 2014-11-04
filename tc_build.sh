@@ -21,7 +21,7 @@ fi
 rm -rf $VIRTUALENV_DIR
 virtualenv --no-site-packages $VIRTUALENV_DIR
 source $VIRTUALENV_DIR/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -r requirements-dev.txt
 
 # Static analysis
 flake8 pylcp tests setup.py
