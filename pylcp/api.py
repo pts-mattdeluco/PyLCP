@@ -1,9 +1,9 @@
+import copy
+import decimal
 import json
 import logging
-import copy
 
 import requests
-
 
 from pylcp.mac import generate_authorization_header_value
 import pylcp.url
@@ -19,6 +19,24 @@ REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + '%(method)s %(url)s HTTP/1.1\n%(headers)s
 RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + 'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
 
 
+class JsonResponseWrapper(object):
+    response = None
+
+    def __init__(self, response):
+        self.response = response
+
+    @classmethod
+    def from_event(cls, response, *args, **kwargs):
+        return cls(response)
+
+    def json(self, **kwargs):
+        kwargs.setdefault('parse_float', decimal.Decimal)
+        return self.response.json(**kwargs)
+
+    def __getattr__(self, attr):
+        return getattr(self.response, attr)
+
+
 class Client(requests.Session):
     """
     Client for making signed requests to the Points Loyalty Commerce Platform.
@@ -31,6 +49,7 @@ class Client(requests.Session):
         self.base_url = base_url
         self.key_id = key_id
         self.shared_secret = shared_secret
+        self.hooks = {'response': JsonResponseWrapper.from_event}
 
     def prepare_request(self, request):
         if self.base_url and not request.url.startswith('http'):

@@ -1,4 +1,5 @@
 import collections
+import decimal
 import json
 import logging
 
@@ -12,7 +13,7 @@ from pylcp import api
 
 class MockRequestAdapter(requests.adapters.BaseAdapter):
     """
-    A requests Transport Adapter which logs the request instead of making acutal
+    A requests Transport Adapter which logs the request instead of making actual
     HTTP calls.
 
     Provides methods for asserting various properties of the request.
@@ -25,17 +26,16 @@ class MockRequestAdapter(requests.adapters.BaseAdapter):
         self.last_request = request
         self.last_request_kwargs = kwargs
 
-        response = mock.MagicMock()
+        response = requests.Response()
         response.request = request
         response.connection = self
         response.status_code = 200
-        response.is_redirect = False
         response.reason = 'OK'
         response.headers = {
             'content-type': 'application/json',
             'location': request.url,
         }
-        response.text = request.body
+        response._content = bytes(request.body)
         return response
 
     def close(self):
@@ -227,6 +227,10 @@ class TestApiClient(object):
                 eq_('OK', log_format_dict['reason'])
                 assert_in(log_data['headers'], log_format_dict['headers'])
                 assert_in('location: ' + log_data['url'], log_format_dict['headers'])
+
+    def test_response_json_parses_float_as_decimal(self):
+        response = self.client.get('/', data='{"number": 1.2}')
+        eq_(response.json()['number'], decimal.Decimal('1.2'))
 
     def test_request_does_not_alter_absolute_urls(self):
         for absolute_url in ['http://www.points.com/', 'https://www.points.com/']:
