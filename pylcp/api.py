@@ -20,14 +20,8 @@ RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + 'HTTP/1.1 %(status_code)d %(reason)s\n%(
 
 
 class JsonResponseWrapper(object):
-    response = None
-
     def __init__(self, response):
         self.response = response
-
-    @classmethod
-    def from_event(cls, response, *args, **kwargs):
-        return cls(response)
 
     def json(self, **kwargs):
         kwargs.setdefault('parse_float', decimal.Decimal)
@@ -35,6 +29,10 @@ class JsonResponseWrapper(object):
 
     def __getattr__(self, attr):
         return getattr(self.response, attr)
+
+
+def _requests_response_hook(response, *args, **kwargs):
+    return JsonResponseWrapper(response)
 
 
 class Client(requests.Session):
@@ -49,7 +47,7 @@ class Client(requests.Session):
         self.base_url = base_url
         self.key_id = key_id
         self.shared_secret = shared_secret
-        self.hooks = {'response': JsonResponseWrapper.from_event}
+        self.hooks = {'response': _requests_response_hook}
 
     def prepare_request(self, request):
         if self.base_url and not request.url.startswith('http'):
