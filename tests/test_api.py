@@ -58,53 +58,63 @@ class MockRequestAdapter(requests.adapters.BaseAdapter):
             eq_(actual_value, expected_value, message)
 
 
-class TestHeaderFormatting(object):
+class APILoggerTestBase(object):
+
+    def setup(self):
+        self.api_logger = api.APILogger(mock.MagicMock(), mock.MagicMock())
+
+
+class TestHeaderFormatting(APILoggerTestBase):
     def test_header_dict_formatted_as_string(self):
         headers = collections.OrderedDict()
         headers['header1'] = 'value1'
         headers['header2'] = 'value2'
         formatted_headers = 'header1: value1\nheader2: value2'
-        eq_(formatted_headers, api.format_headers(headers))
+        eq_(formatted_headers, self.api_logger.format_headers(headers))
 
     def test_empty_header_dict_formatted_as_empty_string(self):
-        eq_('', api.format_headers({}))
+        eq_('', self.api_logger.format_headers({}))
 
 
-class TestJsonPrettifying(object):
+class TestJsonPrettifying(APILoggerTestBase):
+
     def setup(self):
+        super(TestJsonPrettifying, self).setup()
         self.indent_amount = 2
 
     def test_prettified_json_is_indented(self):
         eq_(
             '{{\n{0}"answer": 42\n}}'.format(' ' * self.indent_amount),
-            api.prettify_alleged_json('{"answer": 42}')
+            self.api_logger.prettify_alleged_json('{"answer": 42}')
         )
 
     def test_prettified_json_is_sorted(self):
         eq_(
             '{{\n{0}"x": 2, \n{0}"y": 1\n}}'.format(' ' * self.indent_amount),
-            api.prettify_alleged_json('{"y": 1, "x": 2}')
+            self.api_logger.prettify_alleged_json('{"y": 1, "x": 2}')
         )
 
     def test_non_json_is_not_prettified(self):
         non_json = 'This is not JSON.'
-        eq_(non_json, api.prettify_alleged_json(non_json))
+        eq_(non_json, self.api_logger.prettify_alleged_json(non_json))
 
 
-class TestCreditCardDataMasking(object):
+class TestCreditCardDataMasking(APILoggerTestBase):
+
     def test_none_is_not_masked(self):
-        assert_is_none(api.mask_credit_card_number(None))
+        assert_is_none(self.api_logger.mask_credit_card_number(None))
 
     def test_all_but_last_four_digits_are_masked(self):
         card_number = '1234567890'
-        masked_card_number = api.mask_credit_card_number(card_number)
+        masked_card_number = self.api_logger.mask_credit_card_number(card_number)
         eq_(card_number[-4], masked_card_number[-4])
         eq_(len(card_number), len(masked_card_number))
         eq_('X' * (len(card_number) - 4), masked_card_number[:-4])
 
 
-class TestSensitiveDataMasking(object):
+class TestSensitiveDataMasking(APILoggerTestBase):
     def setup(self):
+        super(TestSensitiveDataMasking, self).setup()
         self.unmasked = {
             'billingInfo': {
                 'cardNumber': '1234567890123456',
@@ -113,17 +123,17 @@ class TestSensitiveDataMasking(object):
             'password': 'secret',
             'language': 'Python',
         }
-        self.masked = api.mask_sensitive_data(self.unmasked)
+        self.masked = self.api_logger.mask_sensitive_data(self.unmasked)
 
     def test_non_data_is_not_masked(self):
-        assert_is_none(api.mask_sensitive_data(None))
-        assert_is_none(api.mask_sensitive_data(''))
-        assert_is_none(api.mask_sensitive_data([]))
-        assert_is_none(api.mask_sensitive_data({}))
+        assert_is_none(self.api_logger.mask_sensitive_data(None))
+        assert_is_none(self.api_logger.mask_sensitive_data(''))
+        assert_is_none(self.api_logger.mask_sensitive_data([]))
+        assert_is_none(self.api_logger.mask_sensitive_data({}))
 
     def test_non_json_data_is_not_masked(self):
         data = 'This is not JSON. cardNumber: 1234567890123456'
-        eq_(data, api.mask_sensitive_data(data))
+        eq_(data, self.api_logger.mask_sensitive_data(data))
 
     def test_card_number_is_masked(self):
         eq_('XXXXXXXXXXXX3456', self.masked['billingInfo']['cardNumber'])
@@ -140,11 +150,32 @@ class TestSensitiveDataMasking(object):
     def test_json_in_a_string_is_masked(self):
         unmasked_string = '{"billingInfo": {}, "password": "secret"}'
         masked_string = '{"password": "XXX", "billingInfo": {}}'
-        eq_(masked_string, api.mask_sensitive_data(unmasked_string))
+        eq_(masked_string, self.api_logger.mask_sensitive_data(unmasked_string))
+
+    def test_mask_sensitive_data_cleans_a_copy_of_data(self):
+        data = {
+            "amount": 20.11,
+            "billingInfo": {
+                "cardNumber": "4111111111111111",
+                "cardType": "VISA",
+                "email": "sonia.walia@points.com",
+                "securityCode": "123",
+                "state": "ON",
+            },
+        }
+        masked_data = self.api_logger.mask_sensitive_data(data)
+
+        eq_(masked_data['billingInfo']['cardNumber'], "XXXXXXXXXXXX1111")
+        eq_(masked_data['billingInfo']['securityCode'], "XXX")
+
+        # assert that original source is unchanged
+        eq_(data['billingInfo']['cardNumber'], "4111111111111111")
+        eq_(data['billingInfo']['securityCode'], "123")
 
 
-class TestMaskingAndFormattingOfRequestBody(object):
+class TestMaskingAndFormattingOfRequestBody(APILoggerTestBase):
     def setup(self):
+        super(TestMaskingAndFormattingOfRequestBody, self).setup()
         self.request = requests.Request()
         self.request.body = json.dumps({
             'billingInfo': {
@@ -157,7 +188,7 @@ class TestMaskingAndFormattingOfRequestBody(object):
         self.request.headers['content-type'] = 'application/json'
 
     def test_json_request_body_is_masked_and_formatted(self):
-        result = api.get_masked_and_formatted_request_body(self.request)
+        result = self.api_logger.get_masked_and_formatted_request_body(self.request)
         expected = {
             'billingInfo': {
                 'cardNumber': 'XXXXXXXXXXXX3456',
@@ -172,11 +203,11 @@ class TestMaskingAndFormattingOfRequestBody(object):
         request = requests.Request()
         request.body = 'This is not JSON'
         request.headers['content-type'] = 'text/plain'
-        eq_(request.body, api.get_masked_and_formatted_request_body(request))
+        eq_(request.body, self.api_logger.get_masked_and_formatted_request_body(request))
 
     def test_non_json_request_body_with_json_content_type_is_not_altered(self):
         self.request.body = 'This is not JSON'
-        eq_(self.request.body, api.get_masked_and_formatted_request_body(self.request))
+        eq_(self.request.body, self.api_logger.get_masked_and_formatted_request_body(self.request))
 
 
 class TestApiClient(object):
@@ -346,27 +377,7 @@ class TestApiClient(object):
         )
         test_adapter.assert_headers_present({'Authorization': 'auth_value'})
 
-    def test_mask_sensitive_data_cleans_a_copy_of_data(self):
-        data = {
-            "amount": 20.11,
-            "billingInfo": {
-                "cardNumber": "4111111111111111",
-                "cardType": "VISA",
-                "email": "sonia.walia@points.com",
-                "securityCode": "123",
-                "state": "ON",
-            },
-        }
-        masked_data = api.mask_sensitive_data(data)
-
-        eq_(masked_data['billingInfo']['cardNumber'], "XXXXXXXXXXXX1111")
-        eq_(masked_data['billingInfo']['securityCode'], "XXX")
-
-        # assert that original source is unchanged
-        eq_(data['billingInfo']['cardNumber'], "4111111111111111")
-        eq_(data['billingInfo']['securityCode'], "123")
-
-    @mock.patch('pylcp.api.mask_sensitive_data')
+    @mock.patch.object(api.APILogger, 'mask_sensitive_data')
     def test_mask_data_is_during_post_request(self, mask_sensitive_data_mock):
         json_data = '{"test": "test"}'
         mask_sensitive_data_mock.return_value = json_data
@@ -374,7 +385,7 @@ class TestApiClient(object):
         self.client.post('/url', data=json_data)
         eq_(mask_sensitive_data_mock.call_args_list, [mock.call({'test': 'test'})])
 
-    @mock.patch('pylcp.api.mask_sensitive_data')
+    @mock.patch.object(api.APILogger, 'mask_sensitive_data')
     def test_mask_data_is_called_during_a_POST_request_with_json_content_type(
             self, mock_mask_sensitive_data):
         data = {"test": "test"}

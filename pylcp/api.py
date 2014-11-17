@@ -14,11 +14,6 @@ request_logger = logging.getLogger(__name__ + '.request')
 response_logger = logging.getLogger(__name__ + '.response')
 
 
-LOG_SEPARATOR = '------------------------------------------------------------\n'
-REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + '%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s'
-RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + 'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
-
-
 class JsonResponseWrapper(object):
     def __init__(self, response):
         self.response = response
@@ -35,10 +30,109 @@ def _requests_response_hook(response, *args, **kwargs):
     return JsonResponseWrapper(response)
 
 
+LOG_SEPARATOR = '------------------------------------------------------------\n'
+
+
+class APILogger(object):
+
+    REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + '%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s'
+    RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + 'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
+
+    def __init__(self, request_logger, response_logger):
+        self.request_logger = request_logger
+        self.response_logger = response_logger
+
+    def log_request(self, request):
+        if request_logger.isEnabledFor(logging.DEBUG):
+            request_logger.debug(
+                self.REQUEST_LOG_TEMPLATE,
+                {
+                    'method': request.method,
+                    'url': request.url,
+                    'headers': self.format_headers(request.headers),
+                    'body': self.get_masked_and_formatted_request_body(request),
+                }
+            )
+
+    def log_response(self, response):
+        if response_logger.isEnabledFor(logging.DEBUG):
+            response_logger.debug(
+                self.RESPONSE_LOG_TEMPLATE,
+                {
+                    'status_code': response.status_code,
+                    'reason': response.reason,
+                    'headers': self.format_headers(response.headers),
+                    'body': self.prettify_alleged_json(response.text),
+                }
+            )
+
+    def format_headers(self, headers):
+        return '\n'.join('{}: {}'.format(k, v) for k, v in headers.items())
+
+    def pretty_json_dumps(self, data):
+        return json.dumps(data, sort_keys=True, indent=2)
+
+    def prettify_alleged_json(self, text):
+        try:
+            return self.pretty_json_dumps(json.loads(text))
+        except:
+            return text
+
+    def mask_credit_card_number(self, credit_card_number):
+        if credit_card_number is None:
+            return None
+
+        credit_card_number = str(credit_card_number)
+
+        return "X" * (len(credit_card_number) - 4) + credit_card_number[-4:]
+
+    def mask_sensitive_data(self, data):
+        if not data:
+            return
+        if isinstance(data, basestring):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                return data
+            return json.dumps(self.mask_sensitive_data(data))
+
+        copied_data = copy.deepcopy(data)
+        if 'billingInfo' in copied_data:
+            if 'cardNumber' in copied_data['billingInfo']:
+                card_number = copied_data['billingInfo']['cardNumber']
+                copied_data['billingInfo']['cardNumber'] = self.mask_credit_card_number(card_number)
+
+            if 'securityCode' in copied_data['billingInfo']:
+                copied_data['billingInfo']['securityCode'] = 'XXX'
+
+        if 'password' in copied_data:
+            copied_data['password'] = 'XXX'
+
+        return copied_data
+
+    def get_masked_and_formatted_request_body(self, request):
+        """
+        Prepares a request body for logging by masking sensitive fields and
+        formatting json data with indentation for readability.
+        """
+        if request.headers.get('content-type') == 'application/json' and request.body:
+            try:
+                data = json.loads(request.body)
+            except ValueError:
+                return request.body
+            masked_data = self.mask_sensitive_data(data)
+            return self.pretty_json_dumps(masked_data)
+
+        return request.body
+
+
 class Client(requests.Session):
     """
     Client for making signed requests to the Points Loyalty Commerce Platform.
     """
+
+    api_logger = APILogger(request_logger, response_logger)
+
     def __init__(self, base_url, key_id=None, shared_secret=None, *args, **kwargs):
         super(Client, self).__init__(*args, **kwargs)
         if key_id is not None:
@@ -68,28 +162,10 @@ class Client(requests.Session):
         return response
 
     def _log_request(self, request):
-        if request_logger.isEnabledFor(logging.DEBUG):
-            request_logger.debug(
-                REQUEST_LOG_TEMPLATE,
-                {
-                    'method': request.method,
-                    'url': request.url,
-                    'headers': format_headers(request.headers),
-                    'body': get_masked_and_formatted_request_body(request),
-                }
-            )
+        self.api_logger.log_request(request)
 
     def _log_response(self, response):
-        if response_logger.isEnabledFor(logging.DEBUG):
-            response_logger.debug(
-                RESPONSE_LOG_TEMPLATE,
-                {
-                    'status_code': response.status_code,
-                    'reason': response.reason,
-                    'headers': format_headers(response.headers),
-                    'body': prettify_alleged_json(response.text),
-                }
-            )
+        self.api_logger.log_response(response)
 
 
 class MACAuth(requests.auth.AuthBase):
@@ -110,69 +186,3 @@ class MACAuth(requests.auth.AuthBase):
             request.body
         )
         return request
-
-
-def format_headers(headers):
-    return '\n'.join(
-        "{}: {}".format(k, v) for k, v in headers.items())
-
-
-def pretty_json_dumps(data):
-    return json.dumps(data, sort_keys=True, indent=2)
-
-
-def prettify_alleged_json(text):
-    try:
-        return pretty_json_dumps(json.loads(text))
-    except:
-        return text
-
-
-def mask_credit_card_number(credit_card_number):
-    if credit_card_number is None:
-        return None
-
-    credit_card_number = str(credit_card_number)
-
-    return "X" * (len(credit_card_number) - 4) + credit_card_number[-4:]
-
-
-def mask_sensitive_data(data):
-    if not data:
-        return
-    if isinstance(data, basestring):
-        try:
-            data = json.loads(data)
-        except ValueError:
-            return data
-        return json.dumps(mask_sensitive_data(data))
-
-    copied_data = copy.deepcopy(data)
-    if 'billingInfo' in copied_data:
-        if 'cardNumber' in copied_data['billingInfo']:
-            card_number = copied_data['billingInfo']['cardNumber']
-            copied_data['billingInfo']['cardNumber'] = mask_credit_card_number(card_number)
-
-        if 'securityCode' in copied_data['billingInfo']:
-            copied_data['billingInfo']['securityCode'] = 'XXX'
-
-    if 'password' in copied_data:
-        copied_data['password'] = 'XXX'
-
-    return copied_data
-
-
-def get_masked_and_formatted_request_body(request):
-    """
-    Prepares a request body for logging by masking sensitive fields and
-    formatting json data with indentation for readability.
-    """
-    if request.headers.get('content-type') == 'application/json' and request.body:
-        try:
-            data = json.loads(request.body)
-        except ValueError:
-            return request.body
-        masked_data = mask_sensitive_data(data)
-        return pretty_json_dumps(masked_data)
-
-    return request.body
