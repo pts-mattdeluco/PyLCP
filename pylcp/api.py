@@ -43,8 +43,8 @@ class APILogger(object):
         self.response_logger = response_logger
 
     def log_request(self, request):
-        if request_logger.isEnabledFor(logging.DEBUG):
-            request_logger.debug(
+        if self.request_logger.isEnabledFor(logging.DEBUG):
+            self.request_logger.debug(
                 self.REQUEST_LOG_TEMPLATE,
                 {
                     'method': request.method,
@@ -55,8 +55,8 @@ class APILogger(object):
             )
 
     def log_response(self, response):
-        if response_logger.isEnabledFor(logging.DEBUG):
-            response_logger.debug(
+        if self.response_logger.isEnabledFor(logging.DEBUG):
+            self.response_logger.debug(
                 self.RESPONSE_LOG_TEMPLATE,
                 {
                     'status_code': response.status_code,

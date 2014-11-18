@@ -242,6 +242,9 @@ class TestApiClient(object):
     def assert_loggers_called(self, log_data):
         with mock.patch('pylcp.api.request_logger') as request_logger_mock:
             with mock.patch('pylcp.api.response_logger') as response_logger_mock:
+                self.client.api_logger.request_logger = request_logger_mock
+                self.client.api_logger.response_logger = response_logger_mock
+
                 self.client.post('/url', data=json.dumps(log_data['body']))
 
                 eq_(self.request_log_format_string, request_logger_mock.debug.call_args_list[0][0][0])
