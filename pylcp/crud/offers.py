@@ -1,19 +1,17 @@
-import collections
-
-import crud
+from pylcp.crud import base as crud
 
 
-class Offer(crud.LCP):
+class Offer(crud.LCPCrud):
     pass
 
 
-class OfferSet(crud.LCP):
+class OfferSet(crud.LCPCrud):
     """ Create an offerset. Any kwargs will be added as top-level parameters in the request payload.
     """
-    def create(self, url, offer_types, session, user_details, recipient_details=None, **kwargs):
+    def create(self, offer_types, session, user_details, recipient_details=None, **kwargs):
         payload = self._create_payload(offer_types, session, user_details, recipient_details, **kwargs)
 
-        return super(OfferSet, self).create(url, payload)
+        return super(OfferSet, self).create('/offer-sets/', payload)
 
     def _create_payload(self, offer_types, session, user_details, recipient_details=None, **kwargs):
         payload = {'offerTypes': offer_types,
@@ -26,5 +24,3 @@ class OfferSet(crud.LCP):
         payload.update(kwargs)
 
         return payload
-
-Session = collections.namedtuple('Session', 'channel referralCode clientIpAddress clientUserAgent')

@@ -6,6 +6,7 @@ operations to support internal services.
 """
 import httplib
 
+from frozendict import frozendict
 import requests
 import simplejson as json
 
@@ -24,7 +25,7 @@ class LCPResource(object):
 
         if response is not None:
             if response.status_code != httplib.NO_CONTENT:
-                self.json = response.json()
+                self.json = frozendict(response.json())
                 try:
                     self._url = self._self_link()
                 except KeyError:
@@ -51,7 +52,7 @@ class LCPResource(object):
         self.json[key] = value
 
 
-class LCP(object):
+class LCPCrud(object):
 
     """Cruds are responsible for translating CRUD operations into http
     requests (method, url-path, querystring, payload) and interpreting http
@@ -67,29 +68,29 @@ class LCP(object):
     def resource_class(self):
         return LCPResource
 
-    def create(self, url, payload):
-        return self._resource_from_http('post', url, payload)
+    def create(self, path, payload):
+        return self._resource_from_http('post', path, payload)
 
-    def read(self, url):
-        return self._resource_from_http('get', url)
+    def read(self, path):
+        return self._resource_from_http('get', path)
 
-    def update(self, url, payload):
-        return self._resource_from_http('put', url, payload)
+    def update(self, path, payload):
+        return self._resource_from_http('put', path, payload)
 
-    def delete(self, url):
-        return self._resource_from_http('delete', url)
+    def delete(self, path):
+        return self._resource_from_http('delete', path)
 
-    def search(self, url, params=None):
-        return self._resource_from_http('get', url, params=params)
+    def search(self, path, params=None):
+        return self._resource_from_http('get', path, params=params)
 
-    def _resource_from_http(self, method, url, payload=None, params=None):
+    def _resource_from_http(self, method, path, payload=None, params=None):
         response = None
 
         try:
-            response = self._http_method(method)(url, data=payload, params=params)
+            response = self._http_method(method)(path, data=payload, params=params)
             response.raise_for_status()
         except requests.RequestException:
-            raise CRUDError(url, method, response, payload, params)
+            raise CRUDError(path, method, response, **{'request_payload': payload, 'request_parameters': params})
         return self.resource_class(response)
 
     def _http_method(self, method):
@@ -97,30 +98,43 @@ class LCP(object):
 
 
 class CRUDError(Exception):
-    def __init__(self, cls, url, operation, response, request_payload=None, request_parameters=None):
-        formatted_payload = self._format_dictionary('Request', request_payload)
-        formatted_parameters = self._format_dictionary('Request Parameters', request_parameters)
+    def __init__(self, url, method, response, **request_kwargs):
+        formatted_request = self._format_optional_args(request_kwargs)
 
         super(CRUDError, self).__init__(
-            "{cls} returned {status_code}.\n"
-            "Operation: {operation}\n"
+            "{status_code} returned.\n"
+            "Method: {method}\n"
             "Correlation ID: {cid}\n"
             "URL: {url}\n"
-            "{formatted_parameters}"
-            "{formatted_payload}"
+            "{formatted_request}"
             "Response: {response}".format(
-                cls=cls.__name__,
                 url=url,
-                formatted_parameters=formatted_parameters,
-                operation=operation,
+                method=method,
                 status_code=response.status_code,
                 cid=response.headers.get('pts-lcp-cid', 'none'),
-                formatted_payload=formatted_payload,
+                formatted_request=formatted_request,
                 response=response.text,
             ))
+
+    def _format_optional_args(self, request_kwargs):
+        formatted_request = ''
+        for key in request_kwargs.keys():
+            value = request_kwargs[key]
+            label = self._format_label(key)
+
+            if isinstance(value, dict):
+                formatted_value = self._format_dictionary(label, value)
+            else:
+                formatted_value = u'{}: "{}"\n'.format(label, value)
+            formatted_request += formatted_value
+
+        return formatted_request
+
+    def _format_label(self, text):
+        return text.replace('_', ' ').capitalize()
 
     def _format_dictionary(self, label, dict_to_format):
         formatted_dictionary = ''
         if dict_to_format is not None:
-            formatted_dictionary = '{}: {}\n'.format(label, json.dumps(dict_to_format, indent=2, sort_keys=True))
+            formatted_dictionary = u'{}: {}\n'.format(label, json.dumps(dict_to_format, indent=2, sort_keys=True))
         return formatted_dictionary

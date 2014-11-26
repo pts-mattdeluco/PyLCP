@@ -4,7 +4,7 @@ import mock
 from nose import tools
 import requests
 
-from pylcp.crud import crud
+from pylcp.crud import base
 
 SAMPLE_URL = 'http://test.com/test'
 SAMPLE_RESPONSE = {'links': {'self': {'href': 'some_url'}}}
@@ -19,5 +19,5 @@ def mock_response(status_code=httplib.OK, headers=None, body=None):
 
 
 def assert_lcp_resource(mocked_response, response):
-    tools.assert_is_instance(response, crud.LCPResource)
+    tools.assert_is_instance(response, base.LCPResource)
     tools.assert_equal(mocked_response, response.response)

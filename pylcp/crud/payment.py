@@ -1,11 +1,11 @@
-import crud
+from pylcp.crud import base as crud
 
 
-class PaymentAuth(crud.LCP):
-    def create(self, url, payload):
-        return super(PaymentAuth, self).create(url, payload)
+class PaymentAuth(crud.LCPCrud):
+    def create(self, path, payload):
+        return super(PaymentAuth, self).create(path, payload)
 
 
-class PaymentCapture(crud.LCP):
-    def create(self, url):
-        return super(PaymentCapture, self).create(url, {})
+class PaymentCapture(crud.LCPCrud):
+    def create(self, path):
+        return super(PaymentCapture, self).create(path, {})
