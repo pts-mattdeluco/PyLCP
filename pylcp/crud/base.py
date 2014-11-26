@@ -34,11 +34,6 @@ class LCPResource(object):
                 self._url = response.headers['location']
 
     @property
-    def id(self):
-        """The resource ID which is the part of the URL that uniquely identifies the resource"""
-        return self.url.split('/')[-1]
-
-    @property
     def url(self):
         return self._url
 

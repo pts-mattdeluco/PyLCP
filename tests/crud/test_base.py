@@ -21,10 +21,6 @@ class TestLCPResource(object):
         lcp_obj = crud.LCPResource(response_mock)
         tools.assert_equal('http://example.com/foo/some_id', lcp_obj.url)
 
-    def test_populates_id_from_url(self):
-        lcp_obj = crud.LCPResource(test_base.mock_response())
-        tools.assert_equal('some_id', lcp_obj.id)
-
     def test_url_is_none_when_no_self_link(self):
         response_mock = test_base.mock_response(headers={})
         lcp_obj = crud.LCPResource(response_mock)
