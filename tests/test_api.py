@@ -6,56 +6,8 @@ import logging
 from nose.tools import assert_in, assert_is_none, eq_
 import mock
 import requests
-import requests.adapters
 
-from pylcp import api
-
-
-class MockRequestAdapter(requests.adapters.BaseAdapter):
-    """
-    A requests Transport Adapter which logs the request instead of making actual
-    HTTP calls.
-
-    Provides methods for asserting various properties of the request.
-    """
-    def __init__(self, *args, **kwargs):
-        self.last_request = None
-        self.last_request_kwargs = None
-
-    def send(self, request, **kwargs):
-        self.last_request = request
-        self.last_request_kwargs = kwargs
-
-        response = requests.Response()
-        response.request = request
-        response.connection = self
-        response.status_code = 200
-        response.reason = 'OK'
-        response.headers = {
-            'content-type': 'application/json',
-            'location': request.url,
-        }
-        response._content = bytes(request.body)
-        return response
-
-    def close(self):
-        pass  # no connection to close
-
-    def assert_request_properties(self, **expected_properties):
-        for property_name, expected_value in expected_properties.items():
-            actual_value = getattr(self.last_request, property_name)
-            message = '{} did not match. Expected: {}, actual: {}'.format(property_name, expected_value, actual_value)
-            eq_(actual_value, expected_value, message)
-
-    def assert_headers_present(self, expected_headers):
-        for header_name, expected_value in expected_headers.items():
-            actual_value = self.last_request.headers.get(header_name)
-            message = 'Header {} did not match. Expected: {}, actual: {}'.format(
-                header_name,
-                expected_value,
-                actual_value,
-            )
-            eq_(actual_value, expected_value, message)
+from pylcp import api, testing
 
 
 class APILoggerTestBase(object):
@@ -226,7 +178,7 @@ class TestApiClient(object):
             '%(body)s')
 
     def _get_client_and_adapter(self, **client_kwargs):
-        test_adapter = MockRequestAdapter()
+        test_adapter = testing.MockRequestAdapter()
         client = api.Client(**client_kwargs)
         client.mount('http://', test_adapter)
         client.mount('https://', test_adapter)
