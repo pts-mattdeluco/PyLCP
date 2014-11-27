@@ -18,13 +18,13 @@ class LCPResource(object):
     are correctly initialized.
     """
     def __init__(self, response=None):
-        self.json = None
+        self._json = None
         self.response = response
         self._url = None
 
         if response is not None:
             if response.status_code != httplib.NO_CONTENT:
-                self.json = response.json()
+                self._json = response.json()
                 try:
                     self._url = self._self_link()
                 except KeyError:
@@ -36,14 +36,15 @@ class LCPResource(object):
     def url(self):
         return self._url
 
+    @property
+    def json(self):
+        return self.response.json()
+
     def _self_link(self):
-        return self.json['links']['self']['href']
+        return self._json['links']['self']['href']
 
     def __getitem__(self, key):
-        return self.json[key]
-
-    def __setitem__(self, key, value):
-        self.json[key] = value
+        return self._json[key]
 
 
 class LCPCrud(object):

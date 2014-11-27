@@ -1,6 +1,6 @@
 import httplib
+import json
 
-import mock
 from nose import tools
 import requests
 
@@ -11,9 +11,11 @@ SAMPLE_RESPONSE = {'links': {'self': {'href': 'some_url'}}}
 
 
 def mock_response(status_code=httplib.OK, headers=None, body=None):
-    response_mock = mock.Mock(spec=requests.Response)
+    response_mock = requests.Response()
     response_mock.headers = headers if headers is not None else {'location': 'http://example.com/foo/some_id'}
-    response_mock.json.return_value = body if body is not None else {}
+    if body is None:
+        body = {}
+    response_mock._content = bytes(json.dumps(body))
     response_mock.status_code = status_code
     return response_mock
 

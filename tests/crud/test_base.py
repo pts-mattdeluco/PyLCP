@@ -30,6 +30,23 @@ class TestLCPResource(object):
         lcp_obj = crud.LCPResource()
         tools.assert_equal(None, lcp_obj.url)
 
+    def test_getitem_gets_from_response(self):
+        response_mock = test_base.mock_response(headers={}, body={'links': {'self': {'href': 'some_url'}}})
+        lcp_obj = crud.LCPResource(response_mock)
+        tools.assert_equal('some_url', lcp_obj['links']['self']['href'])
+
+    def test_setitem_raises(self):
+        response_mock = test_base.mock_response(headers={}, body={'links': {'self': {'href': 'some_url'}}})
+        with tools.assert_raises(TypeError):
+            crud.LCPResource(response_mock)['links'] = 'foo'
+
+    def test_json_returns_copy_of_response(self):
+        response_mock = test_base.mock_response(headers={}, body={'links': {'self': {'href': 'some_url'}}})
+        lcp_obj = crud.LCPResource(response_mock)
+        json_copy = lcp_obj.json
+        json_copy['links'] = 'foo'
+        tools.assert_equal('some_url', lcp_obj['links']['self']['href'])
+
 
 class TestLCPCRUD(object):
     def setup(self):
@@ -44,6 +61,12 @@ class TestLCPCRUD(object):
 
         tools.assert_equal(1, self.mock_client.post.call_count)
         test_base.assert_lcp_resource(mocked_response, response)
+
+    def test_request_failures_raises_crud_error(self):
+        mocked_response = test_base.mock_response(status_code=httplib.NOT_FOUND)
+        self.mock_client.post.return_value = mocked_response
+        with tools.assert_raises(crud.CRUDError):
+            self.lcp_crud.create(test_base.SAMPLE_URL, {})
 
     def test_read(self):
         mocked_response = test_base.mock_response(headers={}, body=test_base.SAMPLE_RESPONSE)
@@ -62,11 +85,11 @@ class TestLCPCRUD(object):
         test_base.assert_lcp_resource(mocked_response, response)
 
     def test_delete(self):
-        mocked_response = test_base.mock_response(headers={}, body=test_base.SAMPLE_RESPONSE)
-        self.mock_client.put.return_value = mocked_response
+        mocked_response = test_base.mock_response(status_code=httplib.NO_CONTENT)
+        self.mock_client.delete.return_value = mocked_response
 
-        response = self.lcp_crud.update(test_base.SAMPLE_URL, {})
-        tools.assert_equal(1, self.mock_client.put.call_count)
+        response = self.lcp_crud.delete(test_base.SAMPLE_URL)
+        tools.assert_equal(1, self.mock_client.delete.call_count)
         test_base.assert_lcp_resource(mocked_response, response)
 
     def test_search(self):
