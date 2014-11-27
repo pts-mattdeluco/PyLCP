@@ -61,10 +61,7 @@ setuptools.setup(name='PyLCP',
                  author_email='',
                  url='',
                  license='',
-                 packages=[
-                     'pylcp',
-                     'pylcp.crud'
-                 ],
+                 packages=setuptools.find_packages(exclude=['tests']),
                  include_package_data=True,
                  zip_safe=False,
                  install_requires=REQUIREMENTS,
