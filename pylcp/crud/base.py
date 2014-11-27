@@ -6,7 +6,6 @@ operations to support internal services.
 """
 import httplib
 
-from frozendict import frozendict
 import requests
 import simplejson as json
 
@@ -25,7 +24,7 @@ class LCPResource(object):
 
         if response is not None:
             if response.status_code != httplib.NO_CONTENT:
-                self.json = frozendict(response.json())
+                self.json = response.json()
                 try:
                     self._url = self._self_link()
                 except KeyError:
