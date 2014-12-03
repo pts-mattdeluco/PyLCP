@@ -8,4 +8,4 @@ class PaymentAuth(crud.LCPCrud):
 
 class PaymentCapture(crud.LCPCrud):
     def create(self, path):
-        return super(PaymentCapture, self).create(path, {})
+        return super(PaymentCapture, self).create(path, '{}')

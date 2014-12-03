@@ -43,10 +43,6 @@ using setuptools and does not depend on any internal packages.
 
 To run tests:
 
-    python setup.py test
-
- Alternatively, you can use Nose directly:
-
  	python setup.py develop
     nosetests tests/
 

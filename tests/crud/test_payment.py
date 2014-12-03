@@ -38,5 +38,5 @@ class TestPaymentCaptureCRUD(object):
         response = self.payment_crud.create(self.path)
 
         tools.assert_equal(1, self.mock_client.post.call_count)
-        self.mock_client.post.assert_called_with(self.path, data={}, params=None)
+        self.mock_client.post.assert_called_with(self.path, data='{}', params=None)
         test_base.assert_lcp_resource(mocked_response, response)
