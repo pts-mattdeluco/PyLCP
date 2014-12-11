@@ -375,3 +375,12 @@ class TestApiClient(object):
                 self.client.post('/url', data='{}')
                 eq_([], request_logger_mock.debug.call_args_list)
                 eq_([], response_logger_mock.debug.call_args_list)
+
+    def test_post_logs_with_unicode_data(self):
+        log_data = {
+            'url': 'http://BASE_URL/url',
+            'headers': 'content-type: application/json',
+            'body': u"Ceci c'est la Fran\xe7ais",
+            'method': 'POST'
+        }
+        self.assert_loggers_called(log_data)
