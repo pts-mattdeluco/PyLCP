@@ -30,13 +30,13 @@ def _requests_response_hook(response, *args, **kwargs):
     return JsonResponseWrapper(response)
 
 
-LOG_SEPARATOR = '------------------------------------------------------------\n'
+LOG_SEPARATOR = u'------------------------------------------------------------\n'
 
 
 class APILogger(object):
 
-    REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + '%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s'
-    RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + 'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
+    REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + u'%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s'
+    RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + u'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
 
     def __init__(self, request_logger, response_logger):
         self.request_logger = request_logger
@@ -122,7 +122,8 @@ class APILogger(object):
                 return request.body
             masked_data = self.mask_sensitive_data(data)
             return self.pretty_json_dumps(masked_data)
-
+        if 'charset=utf-8' in request.headers.get('content-type', ''):
+            return request.body.decode('utf-8')
         return request.body
 
 
