@@ -51,17 +51,68 @@ class TestJsonPrettifying(APILoggerTestBase):
         eq_(non_json, self.api_logger.prettify_alleged_json(non_json))
 
 
-class TestCreditCardDataMasking(APILoggerTestBase):
+class TestCreditCardDataMasking(object):
 
     def test_none_is_not_masked(self):
-        assert_is_none(self.api_logger.mask_credit_card_number(None))
+        assert_is_none(api.mask_credit_card_number(None))
 
     def test_all_but_last_four_digits_are_masked(self):
         card_number = '1234567890'
-        masked_card_number = self.api_logger.mask_credit_card_number(card_number)
+        masked_card_number = api.mask_credit_card_number(card_number)
         eq_(card_number[-4], masked_card_number[-4])
         eq_(len(card_number), len(masked_card_number))
         eq_('X' * (len(card_number) - 4), masked_card_number[:-4])
+
+    def test_none_is_not_masked_with_bin(self):
+        assert_is_none(api.mask_credit_card_number_with_bin(None))
+
+    def test_all_but_first_six_and_last_four_digits_are_masked(self):
+        masked_card_number = api.mask_credit_card_number_with_bin('1234567890123456')
+        eq_('123456XXXXXX3456', masked_card_number)
+
+    def test_all_but_first_six_and_last_four_digits_are_masked_using_integer(self):
+        masked_card_number = api.mask_credit_card_number_with_bin(1234567890123456)
+        eq_('123456XXXXXX3456', masked_card_number)
+
+    def test_all_but_first_six_and_last_four_digits_are_masked_for_short_credit_card_number(self):
+        masked_card_number = api.mask_credit_card_number_with_bin('123456789012')
+        eq_('123456XX9012', masked_card_number)
+
+
+class TestSensitiveBillingInfoDataMasking(object):
+    def setup(self):
+        self.unmasked = {
+            'billingInfo': {
+                'cardNumber': '1234567890123456',
+                'securityCode': '123',
+                'cardType': 'VISA',
+            },
+        }
+        self.masked = api.mask_sensitive_billing_info_data(self.unmasked)
+
+    def test_non_data_is_not_masked(self):
+        assert_is_none(api.mask_sensitive_billing_info_data(None))
+        assert_is_none(api.mask_sensitive_billing_info_data(''))
+        assert_is_none(api.mask_sensitive_billing_info_data([]))
+        assert_is_none(api.mask_sensitive_billing_info_data({}))
+
+    def test_non_json_data_is_not_masked(self):
+        data = 'This is not JSON. cardNumber: 1234567890123456'
+        eq_(data, api.mask_sensitive_billing_info_data(data))
+
+    def test_card_number_is_masked(self):
+        eq_('XXXXXXXXXXXX3456', self.masked['billingInfo']['cardNumber'])
+
+    def test_security_code_is_masked(self):
+        eq_('XXX', self.masked['billingInfo']['securityCode'])
+
+    def test_non_sensitive_data_is_not_masked(self):
+        eq_(self.unmasked['billingInfo']['cardType'], self.masked['billingInfo']['cardType'])
+
+    def test_json_in_a_string_is_masked(self):
+        unmasked = '{"billingInfo": {"cardType": "VISA", "cardNumber": "1234567890123456", "securityCode": "123"}}'
+        masked_string = '{"billingInfo": {"cardType": "VISA", "cardNumber": "XXXXXXXXXXXX3456", "securityCode": "XXX"}}'
+        eq_(masked_string, api.mask_sensitive_billing_info_data(unmasked))
 
 
 class TestSensitiveDataMasking(APILoggerTestBase):

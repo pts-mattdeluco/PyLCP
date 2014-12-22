@@ -78,14 +78,6 @@ class APILogger(object):
         except:
             return text
 
-    def mask_credit_card_number(self, credit_card_number):
-        if credit_card_number is None:
-            return None
-
-        credit_card_number = str(credit_card_number)
-
-        return "X" * (len(credit_card_number) - 4) + credit_card_number[-4:]
-
     def mask_sensitive_data(self, data):
         if not data:
             return
@@ -97,13 +89,7 @@ class APILogger(object):
             return json.dumps(self.mask_sensitive_data(data))
 
         copied_data = copy.deepcopy(data)
-        if 'billingInfo' in copied_data:
-            if 'cardNumber' in copied_data['billingInfo']:
-                card_number = copied_data['billingInfo']['cardNumber']
-                copied_data['billingInfo']['cardNumber'] = self.mask_credit_card_number(card_number)
-
-            if 'securityCode' in copied_data['billingInfo']:
-                copied_data['billingInfo']['securityCode'] = 'XXX'
+        copied_data = mask_sensitive_billing_info_data(copied_data)
 
         if 'password' in copied_data:
             copied_data['password'] = 'XXX'
@@ -187,3 +173,47 @@ class MACAuth(requests.auth.AuthBase):
             request.body
         )
         return request
+
+
+def mask_credit_card_number(credit_card_number):
+    """
+    Masks all but the last 4 digits of a credit card.
+    """
+    if credit_card_number is None:
+        return None
+
+    credit_card_number = str(credit_card_number)
+    return "X" * (len(credit_card_number) - 4) + credit_card_number[-4:]
+
+
+def mask_credit_card_number_with_bin(credit_card_number):
+    """
+    Credit card number is partially masked, where the BIN (first 6 digits) and the last 4 digits are shown.
+    """
+    if credit_card_number is None:
+        return None
+
+    credit_card_number = str(credit_card_number)
+    masked = 'X' * (len(credit_card_number) - 10)
+    return credit_card_number[0:6] + masked + credit_card_number[-4:]
+
+
+def mask_sensitive_billing_info_data(data):
+    if not data:
+        return
+    if isinstance(data, basestring):
+        try:
+            data = json.loads(data)
+        except ValueError:
+            return data
+        return json.dumps(mask_sensitive_billing_info_data(data))
+
+    copied_data = copy.deepcopy(data)
+    if 'billingInfo' in copied_data:
+        if 'cardNumber' in copied_data['billingInfo']:
+            card_number = copied_data['billingInfo']['cardNumber']
+            copied_data['billingInfo']['cardNumber'] = mask_credit_card_number(card_number)
+
+        if 'securityCode' in copied_data['billingInfo']:
+            copied_data['billingInfo']['securityCode'] = 'XXX'
+    return copied_data
