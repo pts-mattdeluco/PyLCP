@@ -183,6 +183,8 @@ def mask_credit_card_number(credit_card_number):
         return None
 
     credit_card_number = str(credit_card_number)
+    if len(credit_card_number) < 4:
+        raise ValueError("Insufficient digits in number to complete masking. At least 4 digits must be present")
     return "X" * (len(credit_card_number) - 4) + credit_card_number[-4:]
 
 
@@ -194,6 +196,8 @@ def mask_credit_card_number_with_bin(credit_card_number):
         return None
 
     credit_card_number = str(credit_card_number)
+    if len(credit_card_number) < 10:
+        raise ValueError("Insufficient digits in number to complete masking. At least 10 digits must be present")
     masked = 'X' * (len(credit_card_number) - 10)
     return credit_card_number[0:6] + masked + credit_card_number[-4:]
 

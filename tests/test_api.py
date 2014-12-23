@@ -3,7 +3,7 @@ import decimal
 import json
 import logging
 
-from nose.tools import assert_in, assert_is_none, eq_
+from nose.tools import assert_in, assert_is_none, assert_raises, eq_
 import mock
 import requests
 
@@ -56,12 +56,20 @@ class TestCreditCardDataMasking(object):
     def test_none_is_not_masked(self):
         assert_is_none(api.mask_credit_card_number(None))
 
+    def test_value_error_on_masking_all_but_last_four_digits_for_number_of_length_three_or_less(self):
+        with assert_raises(ValueError):
+            api.mask_credit_card_number('123')
+
     def test_all_but_last_four_digits_are_masked(self):
         card_number = '1234567890'
         masked_card_number = api.mask_credit_card_number(card_number)
         eq_(card_number[-4], masked_card_number[-4])
         eq_(len(card_number), len(masked_card_number))
         eq_('X' * (len(card_number) - 4), masked_card_number[:-4])
+
+    def test_not_masket_on_masking_all_but_last_four_digits_with_minimum_length_card_number(self):
+        masked_card_number = api.mask_credit_card_number('1234')
+        eq_('1234', masked_card_number)
 
     def test_none_is_not_masked_with_bin(self):
         assert_is_none(api.mask_credit_card_number_with_bin(None))
@@ -77,6 +85,14 @@ class TestCreditCardDataMasking(object):
     def test_all_but_first_six_and_last_four_digits_are_masked_for_short_credit_card_number(self):
         masked_card_number = api.mask_credit_card_number_with_bin('123456789012')
         eq_('123456XX9012', masked_card_number)
+
+    def test_not_masked_on_masking_first_six_and_last_four_digits_with_minimum_length_card_number(self):
+        masked_card_number = api.mask_credit_card_number_with_bin('1234567890')
+        eq_('1234567890', masked_card_number)
+
+    def test_value_error_on_masking_first_six_and_last_four_digits_for_number_of_length_nine_or_less(self):
+        with assert_raises(ValueError):
+            api.mask_credit_card_number_with_bin('123456789')
 
 
 class TestSensitiveBillingInfoDataMasking(object):
