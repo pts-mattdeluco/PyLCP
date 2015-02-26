@@ -3,6 +3,7 @@
 .noseids
 *.pyc
 dist/*
+docs/build/*
 PyLCP.egg-info/*
 test_results/*
 
