@@ -1,17 +1,8 @@
 Python Client Library for the Points Loyalty Commerce Platform
 ==============================================================
 
-This library provides a simple interface for submitting signed and unsigned
+This library provides a simple interface for submitting signed 
 requests to the Points Loyalty Commerce Platform (LCP):
-
-The example below shows how to submit an unsigned request to the LCP:
-
-```python
-	from pylcp.api import Client
-
-	client = Client('https://lcp.points.com/v1')
-	response = client.post('/accounts/', data='{"email": "my_email@example.com"}')
-```
 
 The example below shows how to submit a signed request to the LCP:
 
