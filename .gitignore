@@ -2,6 +2,7 @@
 .env
 .noseids
 *.pyc
+*.swp
 dist/*
 PyLCP.egg-info/*
 test_results/*
