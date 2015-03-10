@@ -88,13 +88,13 @@ class TestPosting(PostingTestBase):
         tools.assert_equal(expected_payload, payload)
 
 
-class TestDebit(object):
+class TestDebit(PostingTestBase):
     def setup(self):
         super(TestDebit, self).setup()
         self.posting_crud = postings.Debit(self.mock_client)
 
 
-class TestCredit(object):
+class TestCredit(PostingTestBase):
     def setup(self):
         super(TestCredit, self).setup()
         self.posting_crud = postings.Credit(self.mock_client)
