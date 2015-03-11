@@ -8,74 +8,93 @@ from pylcp.crud import postings
 from tests.crud import base as test_base
 
 
-class TestCredit(object):
+AMOUNT = 1000
+MV_URL = '/lps/123/mvs/456'
+PIC = 'abc'
+ADDITIONAL_PARAMS = {'a': 'b', 'c': 'd'}
+PATH = '/lps/123/payments'
+EXPECTED_PAYLOAD = {'amount': 1000, 'memberValidation': '/lps/123/mvs/456'}
+
+
+class PostingTestBase(object):
     def setup(self):
         self.mock_client = mock.create_autospec(api.Client)
-        self.credit_crud = postings.Credit(self.mock_client)
+        self.posting_crud = None
 
-        self.amount = 1000
-        self.mv_url = '/lps/123/mvs/456'
-        self.pic = 'abc'
-        self.additional_params = {'a': 'b', 'c': 'd'}
-        self.path = '/lps/123/payments'
-        self.expected_payload = {'amount': 1000, 'memberValidation': '/lps/123/mvs/456'}
-
-    def test_create_credit_no_pic(self):
+    def test_create_posting_with_optional_pic(self):
         mocked_response = test_base.mock_response(headers={}, body=test_base.SAMPLE_RESPONSE)
         self.mock_client.post.return_value = mocked_response
 
-        response = self.credit_crud.create(self.path, self.amount, self.mv_url)
+        expected_payload = copy.deepcopy(EXPECTED_PAYLOAD)
+        expected_payload['pic'] = PIC
+
+        response = self.posting_crud.create(PATH, AMOUNT, MV_URL, pic=PIC)
 
         tools.assert_equal(1, self.mock_client.post.call_count)
-        self.mock_client.post.assert_called_with(self.path, data=self.expected_payload, params=None)
+        self.mock_client.post.assert_called_with(PATH, data=expected_payload, params=None)
         test_base.assert_lcp_resource(mocked_response, response)
 
-    def test_create_credit_with_optional_pic(self):
+
+class TestPosting(PostingTestBase):
+    def setup(self):
+        super(TestPosting, self).setup()
+        self.posting_crud = postings.Posting(self.mock_client)
+
+    def test_create_posting_no_pic(self):
         mocked_response = test_base.mock_response(headers={}, body=test_base.SAMPLE_RESPONSE)
         self.mock_client.post.return_value = mocked_response
 
-        expected_payload = copy.deepcopy(self.expected_payload)
-        expected_payload['pic'] = self.pic
-
-        response = self.credit_crud.create(self.path, self.amount, self.mv_url, pic=self.pic)
+        response = self.posting_crud.create(PATH, AMOUNT, MV_URL)
 
         tools.assert_equal(1, self.mock_client.post.call_count)
-        self.mock_client.post.assert_called_with(self.path, data=expected_payload, params=None)
+        self.mock_client.post.assert_called_with(PATH, data=EXPECTED_PAYLOAD, params=None)
         test_base.assert_lcp_resource(mocked_response, response)
 
-    def test_create_credit_with_optional_kwargs_add_top_level_params(self):
+    def test_create_posting_with_optional_kwargs_add_top_level_params(self):
         mocked_response = test_base.mock_response(headers={}, body=test_base.SAMPLE_RESPONSE)
         self.mock_client.post.return_value = mocked_response
 
-        expected_payload = copy.deepcopy(self.expected_payload)
-        expected_payload.update(self.additional_params)
+        expected_payload = copy.deepcopy(EXPECTED_PAYLOAD)
+        expected_payload.update(ADDITIONAL_PARAMS)
 
-        response = self.credit_crud.create(self.path, self.amount, self.mv_url, **self.additional_params)
+        response = self.posting_crud.create(PATH, AMOUNT, MV_URL, **ADDITIONAL_PARAMS)
 
         tools.assert_equal(1, self.mock_client.post.call_count)
-        self.mock_client.post.assert_called_with(self.path, data=expected_payload, params=None)
+        self.mock_client.post.assert_called_with(PATH, data=expected_payload, params=None)
         test_base.assert_lcp_resource(mocked_response, response)
 
-    def test_create_payload(self):
-        expected_payload = {"amount": self.amount, "memberValidation": self.mv_url}
-        payload = self.credit_crud._create_payload(self.amount, self.mv_url)
+    def test_posting_payload(self):
+        expected_payload = {"amount": AMOUNT, "memberValidation": MV_URL}
+        payload = self.posting_crud._create_payload(AMOUNT, MV_URL)
 
         tools.assert_equal(expected_payload, payload)
 
-    def test_create_payload_with_optional_pic(self):
-        expected_payload = {"amount": self.amount, "memberValidation": self.mv_url, "pic": self.pic}
-        payload = self.credit_crud._create_payload(self.amount, self.mv_url, self.pic)
+    def test_posting_payload_with_optional_pic(self):
+        expected_payload = {"amount": AMOUNT, "memberValidation": MV_URL, "pic": PIC}
+        payload = self.posting_crud._create_payload(AMOUNT, MV_URL, PIC)
 
         tools.assert_equal(expected_payload, payload)
 
-    def test_create_payload_with_empty_pic(self):
-        expected_payload = {"amount": self.amount, "memberValidation": self.mv_url, "pic": ''}
-        payload = self.credit_crud._create_payload(self.amount, self.mv_url, '')
+    def test_posting_payload_with_empty_pic(self):
+        expected_payload = {"amount": AMOUNT, "memberValidation": MV_URL, "pic": ''}
+        payload = self.posting_crud._create_payload(AMOUNT, MV_URL, '')
 
         tools.assert_equal(expected_payload, payload)
 
-    def test_create_payload_with_optional_kwargs(self):
-        expected_payload = {"amount": self.amount, "memberValidation": self.mv_url, 'a': 'b', 'c': 'd'}
-        payload = self.credit_crud._create_payload(self.amount, self.mv_url, **self.additional_params)
+    def test_posting_payload_with_optional_kwargs(self):
+        expected_payload = {"amount": AMOUNT, "memberValidation": MV_URL, 'a': 'b', 'c': 'd'}
+        payload = self.posting_crud._create_payload(AMOUNT, MV_URL, **ADDITIONAL_PARAMS)
 
         tools.assert_equal(expected_payload, payload)
+
+
+class TestDebit(PostingTestBase):
+    def setup(self):
+        super(TestDebit, self).setup()
+        self.posting_crud = postings.Debit(self.mock_client)
+
+
+class TestCredit(PostingTestBase):
+    def setup(self):
+        super(TestCredit, self).setup()
+        self.posting_crud = postings.Credit(self.mock_client)
