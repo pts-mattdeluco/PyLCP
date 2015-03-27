@@ -1,5 +1,3 @@
-import copy
-
 import mock
 from nose import tools
 
@@ -8,7 +6,7 @@ from pylcp.crud import loyalty_program
 from tests.crud import base as test_base
 
 
-class TestOrdersCRUD(object):
+class TestLoyaltyProgramCRUD(object):
     def setup(self):
         self.mock_client = mock.create_autospec(api.Client)
         self.lps_crud = loyalty_program.LoyaltyProgram(self.mock_client)
