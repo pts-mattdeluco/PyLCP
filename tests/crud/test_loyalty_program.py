@@ -11,7 +11,6 @@ class TestLoyaltyProgramCRUD(object):
         self.mock_client = mock.create_autospec(api.Client)
         self.lps_crud = loyalty_program.LoyaltyProgram(self.mock_client)
 
-
     def test_get_loyalty_program(self):
         mocked_response = test_base.mock_response(headers={}, body=test_base.SAMPLE_RESPONSE)
         self.mock_client.get.return_value = mocked_response
