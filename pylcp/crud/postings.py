@@ -23,7 +23,7 @@ def _create_payload(amount, member_validation, pic=None, credit_type=None, **kwa
         payload = {"amount": amount,
                    "memberValidation": member_validation}
 
-        if pic is not None:
+        if _include_pic_in_payload(pic):
             payload['pic'] = pic
 
         if credit_type:
@@ -32,3 +32,10 @@ def _create_payload(amount, member_validation, pic=None, credit_type=None, **kwa
         payload.update(kwargs)
 
         return payload
+
+
+def _include_pic_in_payload(pic):
+    """
+    PIC code should be inlcuded in the payload even if the value passed in is an empty string
+    """
+    return pic is not None
