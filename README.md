@@ -1,6 +1,8 @@
 Python Client Library for the Points Loyalty Commerce Platform
 ==============================================================
 
+[![Build Status](https://travis-ci.org/Points/PyLCP.svg?branch=master)](https://travis-ci.org/Points/PyLCP)
+
 This library provides a simple interface for submitting signed 
 requests to the Points Loyalty Commerce Platform (LCP):
 
