@@ -17,6 +17,9 @@ class APILoggerTestBase(object):
 
 
 class TestHeaderFormatting(APILoggerTestBase):
+    def test_travis_test_failure(self):
+        eq_(1,2)
+
     def test_header_dict_formatted_as_string(self):
         headers = collections.OrderedDict()
         headers['header1'] = 'value1'
