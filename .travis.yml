@@ -4,6 +4,4 @@ python:
 install:
   - "pip install ."
   - "pip install -r requirements-dev.txt"
-script: 
-  - "flake8"
-  - "nosetests"
+script: flake8 && nosetests
