@@ -21,6 +21,7 @@ fi
 rm -rf $VIRTUALENV_DIR
 virtualenv --no-site-packages $VIRTUALENV_DIR
 source $VIRTUALENV_DIR/bin/activate
+pip install pip==1.5.4
 pip install -r requirements-dev.txt
 
 # Static analysis
