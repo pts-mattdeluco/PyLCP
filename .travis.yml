@@ -4,4 +4,7 @@ python:
 install:
   - "pip install ."
   - "pip install -r requirements-dev.txt"
+  - "pip install coveralls"
 script: flake8 && nosetests
+after_success:
+  coveralls
