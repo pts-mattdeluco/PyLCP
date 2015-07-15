@@ -16,6 +16,8 @@ code coverage is the same or higher.
 * We use PEP8 as our code style standard with one change for line length. You
 must run `flake8` to ensure that your changes follow this standard.
 
+* Don't bump version_number.txt
+
 * Submit your changes in a pull request. 
 
-* Don't bump version_number.txt
+
