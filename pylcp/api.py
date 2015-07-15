@@ -41,7 +41,7 @@ class APILogger(object):
     def __init__(self, request_logger, response_logger, loggable_content_types=None):
         self.request_logger = request_logger
         self.response_logger = response_logger
-        self.loggable_content_types = [] if not loggable_content_types else loggable_content_types
+        self.loggable_content_types = loggable_content_types or []
 
     def log_request(self, request):
         if self.request_logger.isEnabledFor(logging.DEBUG):
