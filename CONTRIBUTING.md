@@ -17,3 +17,5 @@ code coverage is the same or higher.
 must run `flake8` to ensure that your changes follow this standard.
 
 * Submit your changes in a pull request. 
+
+* Don't bump version_number.txt
