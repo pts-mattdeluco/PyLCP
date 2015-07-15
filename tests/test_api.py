@@ -3,6 +3,7 @@ import decimal
 import json
 import logging
 
+import httpretty
 from nose.tools import assert_in, assert_is_none, assert_raises, eq_
 import mock
 import requests
@@ -37,18 +38,22 @@ class TestJsonPrettifying(APILoggerTestBase):
     def test_prettified_json_is_indented(self):
         eq_(
             '{{\n{0}"answer": 42\n}}'.format(' ' * self.indent_amount),
-            self.api_logger.prettify_alleged_json('{"answer": 42}')
+            self.api_logger.format_content('{"answer": 42}', None, 'application/json')
         )
 
     def test_prettified_json_is_sorted(self):
         eq_(
             '{{\n{0}"x": 2, \n{0}"y": 1\n}}'.format(' ' * self.indent_amount),
-            self.api_logger.prettify_alleged_json('{"y": 1, "x": 2}')
+            self.api_logger.format_content('{"y": 1, "x": 2}', None, 'application/json')
         )
 
     def test_non_json_is_not_prettified(self):
         non_json = 'This is not JSON.'
-        eq_(non_json, self.api_logger.prettify_alleged_json(non_json))
+        eq_(non_json, self.api_logger.format_content(non_json, None, 'text/plain'))
+
+    def test_content_not_logged_when_type_not_in_loggable_types(self):
+        eq_('content not logged',
+            self.api_logger.format_content("blah", ['application/json'], 'application/vnd.ms-excel'))
 
 
 class TestCreditCardDataMasking(object):
@@ -207,7 +212,7 @@ class TestMaskingAndFormattingOfRequestBody(APILoggerTestBase):
         self.request.headers['content-type'] = 'application/json'
 
     def test_json_request_body_is_masked_and_formatted(self):
-        result = self.api_logger.get_masked_and_formatted_request_body(self.request)
+        result = self.api_logger.get_masked_and_formatted_request_body(self.request, None, 'application/json')
         expected = {
             'billingInfo': {
                 'cardNumber': 'XXXXXXXXXXXX3456',
@@ -218,15 +223,20 @@ class TestMaskingAndFormattingOfRequestBody(APILoggerTestBase):
         }
         eq_(json.dumps(expected, indent=2, sort_keys=True), result)
 
+    def test_content_not_logged_when_type_not_in_loggable_types(self):
+        result = self.api_logger.get_masked_and_formatted_request_body(self.request, ['text/plain'], 'application/json')
+        eq_('content not logged', result)
+
     def test_non_json_request_body_is_not_altered(self):
         request = requests.Request()
         request.body = 'This is not JSON'
         request.headers['content-type'] = 'text/plain'
-        eq_(request.body, self.api_logger.get_masked_and_formatted_request_body(request))
+        eq_(request.body, self.api_logger.get_masked_and_formatted_request_body(request, None, 'application/json'))
 
     def test_non_json_request_body_with_json_content_type_is_not_altered(self):
         self.request.body = 'This is not JSON'
-        eq_(self.request.body, self.api_logger.get_masked_and_formatted_request_body(self.request))
+        eq_(self.request.body,
+            self.api_logger.get_masked_and_formatted_request_body(self.request, None, 'application/json'))
 
 
 class TestApiClient(object):
@@ -451,3 +461,61 @@ class TestApiClient(object):
             'method': 'POST'
         }
         self.assert_loggers_called(log_data)
+
+
+class TestClientPassesLoggableContentTypesToLogger(object):
+
+    def setup(self):
+        self.client = api.Client(
+            "http://localhost:8080/", "a85751701d4d4127a17edb34a15317a0",
+            "3b11b03d1a9f4a0ca04fdede4ae30a1c", ['application/json'])
+
+        self.client.api_logger = mock.Mock()
+
+        httpretty.enable()
+        httpretty.register_uri(
+            httpretty.GET, 'http://localhost:8080/test', body="Test Response", status=200)
+
+        self.client.get('/test')
+
+    def teardown(self):
+        httpretty.disable()
+
+    def test_loggable_content_types_passed_to_logger_on_request(self):
+        call_args = self.client.api_logger.log_request.call_args_list[0][0]
+        _, loggable_types = call_args
+        eq_(loggable_types, ['application/json'])
+
+    def test_loggable_content_types_passed_to_logger_on_response(self):
+        call_args = self.client.api_logger.log_response.call_args_list[0][0]
+        _, loggable_types = call_args
+        eq_(loggable_types, ['application/json'])
+
+
+class TestAPILoggerUsesLoggableContentTypes():
+    def setup(self):
+        logger_impl_mock = mock.Mock()
+        self.get_masked_and_formatted_request_body_mock = mock.Mock()
+        self.format_content_mock = mock.Mock()
+
+        self.logger = api.APILogger(logger_impl_mock, logger_impl_mock)
+        self.logger.get_masked_and_formatted_request_body = self.get_masked_and_formatted_request_body_mock
+        self.logger.format_content = self.format_content_mock
+
+        self.mock_request = mock.Mock()
+        self.mock_request.headers = {'Content-Type': 'application/json'}
+        self.mock_request.body = '{"thisIs": "json"}'
+
+    def test_log_request_uses_loggable_types(self):
+        loggable_types = ['application/json']
+        self.logger.log_request(self.mock_request, loggable_types)
+
+        eq_(self.get_masked_and_formatted_request_body_mock.call_args_list,
+            [mock.call(self.mock_request, loggable_types, 'application/json')])
+
+    def test_log_response_uses_loggable_types(self):
+        loggable_types = ['application/json']
+        self.logger.log_response(self.mock_request, loggable_types)
+
+        eq_(self.format_content_mock.call_args_list,
+            [mock.call(self.mock_request.text, loggable_types, 'application/json')])

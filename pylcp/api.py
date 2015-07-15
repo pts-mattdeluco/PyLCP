@@ -42,7 +42,7 @@ class APILogger(object):
         self.request_logger = request_logger
         self.response_logger = response_logger
 
-    def log_request(self, request):
+    def log_request(self, request, loggable_content_types):
         if self.request_logger.isEnabledFor(logging.DEBUG):
             self.request_logger.debug(
                 self.REQUEST_LOG_TEMPLATE,
@@ -50,11 +50,12 @@ class APILogger(object):
                     'method': request.method,
                     'url': request.url,
                     'headers': self.format_headers(request.headers),
-                    'body': self.get_masked_and_formatted_request_body(request),
+                    'body': self.get_masked_and_formatted_request_body(
+                        request, loggable_content_types, request.headers.get('Content-Type')),
                 }
             )
 
-    def log_response(self, response):
+    def log_response(self, response, loggable_content_types):
         if self.response_logger.isEnabledFor(logging.DEBUG):
             self.response_logger.debug(
                 self.RESPONSE_LOG_TEMPLATE,
@@ -62,7 +63,8 @@ class APILogger(object):
                     'status_code': response.status_code,
                     'reason': response.reason,
                     'headers': self.format_headers(response.headers),
-                    'body': self.prettify_alleged_json(response.text),
+                    'body': self.format_content(
+                        response.text, loggable_content_types, response.headers.get('Content-Type')),
                 }
             )
 
@@ -72,11 +74,14 @@ class APILogger(object):
     def pretty_json_dumps(self, data):
         return json.dumps(data, sort_keys=True, indent=2)
 
-    def prettify_alleged_json(self, text):
-        try:
-            return self.pretty_json_dumps(json.loads(text))
-        except:
-            return text
+    def format_content(self, content, loggable_content_types, content_type):
+        if loggable_content_types and content_type not in loggable_content_types:
+            return "content not logged"
+        else:
+            try:
+                return self.pretty_json_dumps(json.loads(content))
+            except:
+                return content
 
     def mask_sensitive_data(self, data):
         if not data:
@@ -96,21 +101,24 @@ class APILogger(object):
 
         return copied_data
 
-    def get_masked_and_formatted_request_body(self, request):
+    def get_masked_and_formatted_request_body(self, request, loggable_content_types, content_type):
         """
         Prepares a request body for logging by masking sensitive fields and
         formatting json data with indentation for readability.
         """
-        if request.headers.get('content-type') == 'application/json' and request.body:
-            try:
-                data = json.loads(request.body)
-            except ValueError:
-                return request.body
-            masked_data = self.mask_sensitive_data(data)
-            return self.pretty_json_dumps(masked_data)
-        if 'charset=utf-8' in request.headers.get('content-type', ''):
-            return request.body.decode('utf-8')
-        return request.body
+        if loggable_content_types and content_type not in loggable_content_types:
+            return "content not logged"
+        else:
+            if content_type == 'application/json' and request.body:
+                try:
+                    data = json.loads(request.body)
+                except ValueError:
+                    return request.body
+                masked_data = self.mask_sensitive_data(data)
+                return self.pretty_json_dumps(masked_data)
+            if 'charset=utf-8' in request.headers.get('content-type', ''):
+                return request.body.decode('utf-8')
+            return request.body
 
 
 class Client(requests.Session):
@@ -118,17 +126,18 @@ class Client(requests.Session):
     Client for making signed requests to the Points Loyalty Commerce Platform.
     """
 
-    api_logger = APILogger(request_logger, response_logger)
-
-    def __init__(self, base_url, key_id=None, shared_secret=None, *args, **kwargs):
+    def __init__(self, base_url, key_id=None, shared_secret=None, loggable_content_types=None, *args, **kwargs):
         super(Client, self).__init__(*args, **kwargs)
         if key_id is not None:
             self.auth = MACAuth(key_id, shared_secret)
+
+        self.api_logger = APILogger(request_logger, response_logger)
 
         self.base_url = base_url
         self.key_id = key_id
         self.shared_secret = shared_secret
         self.hooks = {'response': _requests_response_hook}
+        self.loggable_content_types = loggable_content_types
 
     def prepare_request(self, request):
         if self.base_url and not request.url.startswith('http'):
@@ -149,10 +158,10 @@ class Client(requests.Session):
         return response
 
     def _log_request(self, request):
-        self.api_logger.log_request(request)
+        self.api_logger.log_request(request, self.loggable_content_types)
 
     def _log_response(self, response):
-        self.api_logger.log_response(response)
+        self.api_logger.log_response(response, self.loggable_content_types)
 
 
 class MACAuth(requests.auth.AuthBase):
