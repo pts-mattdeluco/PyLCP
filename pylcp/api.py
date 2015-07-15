@@ -38,11 +38,12 @@ class APILogger(object):
     REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + u'%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s'
     RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + u'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
 
-    def __init__(self, request_logger, response_logger):
+    def __init__(self, request_logger, response_logger, loggable_content_types=None):
         self.request_logger = request_logger
         self.response_logger = response_logger
+        self.loggable_content_types = [] if not loggable_content_types else loggable_content_types
 
-    def log_request(self, request, loggable_content_types):
+    def log_request(self, request):
         if self.request_logger.isEnabledFor(logging.DEBUG):
             self.request_logger.debug(
                 self.REQUEST_LOG_TEMPLATE,
@@ -50,12 +51,11 @@ class APILogger(object):
                     'method': request.method,
                     'url': request.url,
                     'headers': self.format_headers(request.headers),
-                    'body': self.get_masked_and_formatted_request_body(
-                        request, loggable_content_types, request.headers.get('Content-Type')),
+                    'body': self.get_masked_and_formatted_request_body(request),
                 }
             )
 
-    def log_response(self, response, loggable_content_types):
+    def log_response(self, response):
         if self.response_logger.isEnabledFor(logging.DEBUG):
             self.response_logger.debug(
                 self.RESPONSE_LOG_TEMPLATE,
@@ -63,8 +63,7 @@ class APILogger(object):
                     'status_code': response.status_code,
                     'reason': response.reason,
                     'headers': self.format_headers(response.headers),
-                    'body': self.format_content(
-                        response.text, loggable_content_types, response.headers.get('Content-Type')),
+                    'body': self.format_content(response),
                 }
             )
 
@@ -74,14 +73,18 @@ class APILogger(object):
     def pretty_json_dumps(self, data):
         return json.dumps(data, sort_keys=True, indent=2)
 
-    def format_content(self, content, loggable_content_types, content_type):
-        if loggable_content_types and content_type not in loggable_content_types:
+    def _log_content(self, content_type):
+        return not self.loggable_content_types or content_type in self.loggable_content_types
+
+    def format_content(self, response):
+        content_type = response.headers.get('Content-Type')
+        if not self._log_content(content_type):
             return "content not logged"
         else:
             try:
-                return self.pretty_json_dumps(json.loads(content))
+                return self.pretty_json_dumps(json.loads(response.text))
             except:
-                return content
+                return response.text
 
     def mask_sensitive_data(self, data):
         if not data:
@@ -101,12 +104,13 @@ class APILogger(object):
 
         return copied_data
 
-    def get_masked_and_formatted_request_body(self, request, loggable_content_types, content_type):
+    def get_masked_and_formatted_request_body(self, request):
         """
         Prepares a request body for logging by masking sensitive fields and
         formatting json data with indentation for readability.
         """
-        if loggable_content_types and content_type not in loggable_content_types:
+        content_type = request.headers.get('Content-Type')
+        if not self._log_content(content_type):
             return "content not logged"
         else:
             if content_type == 'application/json' and request.body:
@@ -131,13 +135,12 @@ class Client(requests.Session):
         if key_id is not None:
             self.auth = MACAuth(key_id, shared_secret)
 
-        self.api_logger = APILogger(request_logger, response_logger)
+        self.api_logger = APILogger(request_logger, response_logger, loggable_content_types)
 
         self.base_url = base_url
         self.key_id = key_id
         self.shared_secret = shared_secret
         self.hooks = {'response': _requests_response_hook}
-        self.loggable_content_types = loggable_content_types
 
     def prepare_request(self, request):
         if self.base_url and not request.url.startswith('http'):
@@ -158,10 +161,10 @@ class Client(requests.Session):
         return response
 
     def _log_request(self, request):
-        self.api_logger.log_request(request, self.loggable_content_types)
+        self.api_logger.log_request(request)
 
     def _log_response(self, response):
-        self.api_logger.log_response(response, self.loggable_content_types)
+        self.api_logger.log_response(response)
 
 
 class MACAuth(requests.auth.AuthBase):
