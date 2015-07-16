@@ -22,22 +22,20 @@ class TestLoggerDefaults(object):
     def setup(self):
         self.api_logger = api.APILogger(mock.MagicMock(), mock.MagicMock())
 
-    def test_get_masked_and_formatted_request_body_logs_json_request_by_default(self):
+    def test_get_masked_and_formatted_request_body_logs_anything_by_default(self):
         mock_request = mock.Mock()
         mock_request.headers = {}
-        mock_request.headers['Content-Type'] = 'application/json'
-        mock_request.body = '{"a": 1}'
-        expected_result = '{\n  "a": 1\n}'
+        mock_request.headers['Content-Type'] = 'application/xxx'
+        mock_request.body = 'xxx'
         result = self.api_logger.get_masked_and_formatted_request_body(mock_request)
-        eq_(result, expected_result)
+        eq_(result, mock_request.body)
 
-    def test_prettify_alleged_json_logs_json_request_by_default(self):
+    def test_prettify_alleged_json_logs_anything_request_by_default(self):
         mock_response = mock.Mock()
         mock_response.headers = {}
-        mock_response.headers['Content-Type'] = 'application/json'
-        mock_response.text = '{"a": 1}'
-        expected_result = '{\n  "a": 1\n}'
-        eq_(self.api_logger.prettify_alleged_json(mock_response), expected_result)
+        mock_response.headers['Content-Type'] = 'application/xxx'
+        mock_response.text = 'xxx'
+        eq_(self.api_logger.prettify_alleged_json(mock_response), mock_response.text)
 
 
 class TestHeaderFormatting(APILoggerTestBase):

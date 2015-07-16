@@ -41,7 +41,7 @@ class APILogger(object):
     def __init__(self, request_logger, response_logger, loggable_content_types=None):
         self.request_logger = request_logger
         self.response_logger = response_logger
-        self.loggable_content_types = loggable_content_types or ['application/json']
+        self.loggable_content_types = loggable_content_types or []
 
     def log_request(self, request):
         if self.request_logger.isEnabledFor(logging.DEBUG):
@@ -74,7 +74,7 @@ class APILogger(object):
         return json.dumps(data, sort_keys=True, indent=2)
 
     def _log_content(self, content_type):
-        return content_type in self.loggable_content_types
+        return not self.loggable_content_types or content_type in self.loggable_content_types
 
     def prettify_alleged_json(self, response):
         if not self._log_content(response.headers.get('Content-Type')):
