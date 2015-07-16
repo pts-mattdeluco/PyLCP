@@ -41,7 +41,7 @@ class APILogger(object):
     def __init__(self, request_logger, response_logger, loggable_content_types=None):
         self.request_logger = request_logger
         self.response_logger = response_logger
-        self.loggable_content_types = loggable_content_types or []
+        self.loggable_content_types = loggable_content_types or ['application/json']
 
     def log_request(self, request):
         if self.request_logger.isEnabledFor(logging.DEBUG):
@@ -63,7 +63,7 @@ class APILogger(object):
                     'status_code': response.status_code,
                     'reason': response.reason,
                     'headers': self.format_headers(response.headers),
-                    'body': self.format_content(response),
+                    'body': self.prettify_alleged_json(response),
                 }
             )
 
@@ -74,11 +74,10 @@ class APILogger(object):
         return json.dumps(data, sort_keys=True, indent=2)
 
     def _log_content(self, content_type):
-        return not self.loggable_content_types or content_type in self.loggable_content_types
+        return content_type in self.loggable_content_types
 
-    def format_content(self, response):
-        content_type = response.headers.get('Content-Type')
-        if not self._log_content(content_type):
+    def prettify_alleged_json(self, response):
+        if not self._log_content(response.headers.get('Content-Type')):
             return "content not logged"
         else:
             try:
@@ -120,7 +119,7 @@ class APILogger(object):
                     return request.body
                 masked_data = self.mask_sensitive_data(data)
                 return self.pretty_json_dumps(masked_data)
-            if 'charset=utf-8' in request.headers.get('content-type', ''):
+            if 'charset=utf-8' in request.headers.get('Content-Type', ''):
                 return request.body.decode('utf-8')
             return request.body
 
@@ -147,9 +146,9 @@ class Client(requests.Session):
             request.url = pylcp.url.url_path_join(self.base_url, request.url)
 
         if request.method.upper() in {'PATCH', 'POST', 'PUT'}:
-            request.headers.setdefault('content-type', 'application/json')
+            request.headers.setdefault('Content-Type', 'application/json')
         else:
-            request.headers.setdefault('content-type', '')
+            request.headers.setdefault('Content-Type', '')
 
         prepared_request = super(Client, self).prepare_request(request)
         return prepared_request
@@ -181,7 +180,7 @@ class MACAuth(requests.auth.AuthBase):
             request.url,
             self.key_id,
             self.shared_secret,
-            request.headers['content-type'],
+            request.headers['Content-Type'],
             request.body
         )
         return request

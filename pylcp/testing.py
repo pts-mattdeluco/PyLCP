@@ -23,7 +23,7 @@ class MockRequestAdapter(adapters.BaseAdapter):
         response.status_code = 200
         response.reason = 'OK'
         response.headers = {
-            'content-type': 'application/json',
+            'Content-Type': 'application/json',
             'location': request.url,
         }
         response._content = bytes(request.body)
