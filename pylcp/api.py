@@ -38,9 +38,10 @@ class APILogger(object):
     REQUEST_LOG_TEMPLATE = LOG_SEPARATOR + u'%(method)s %(url)s HTTP/1.1\n%(headers)s\n\n%(body)s'
     RESPONSE_LOG_TEMPLATE = LOG_SEPARATOR + u'HTTP/1.1 %(status_code)d %(reason)s\n%(headers)s\n\n%(body)s'
 
-    def __init__(self, request_logger, response_logger):
+    def __init__(self, request_logger, response_logger, loggable_content_types=None):
         self.request_logger = request_logger
         self.response_logger = response_logger
+        self.loggable_content_types = loggable_content_types or []
 
     def log_request(self, request):
         if self.request_logger.isEnabledFor(logging.DEBUG):
@@ -62,7 +63,7 @@ class APILogger(object):
                     'status_code': response.status_code,
                     'reason': response.reason,
                     'headers': self.format_headers(response.headers),
-                    'body': self.prettify_alleged_json(response.text),
+                    'body': self.prettify_alleged_json(response),
                 }
             )
 
@@ -72,11 +73,17 @@ class APILogger(object):
     def pretty_json_dumps(self, data):
         return json.dumps(data, sort_keys=True, indent=2)
 
-    def prettify_alleged_json(self, text):
-        try:
-            return self.pretty_json_dumps(json.loads(text))
-        except:
-            return text
+    def _log_content(self, content_type):
+        return not self.loggable_content_types or content_type in self.loggable_content_types
+
+    def prettify_alleged_json(self, response):
+        if not self._log_content(response.headers.get('Content-Type')):
+            return "content not logged"
+        else:
+            try:
+                return self.pretty_json_dumps(json.loads(response.text))
+            except:
+                return response.text
 
     def mask_sensitive_data(self, data):
         if not data:
@@ -101,16 +108,20 @@ class APILogger(object):
         Prepares a request body for logging by masking sensitive fields and
         formatting json data with indentation for readability.
         """
-        if request.headers.get('content-type') == 'application/json' and request.body:
-            try:
-                data = json.loads(request.body)
-            except ValueError:
-                return request.body
-            masked_data = self.mask_sensitive_data(data)
-            return self.pretty_json_dumps(masked_data)
-        if 'charset=utf-8' in request.headers.get('content-type', ''):
-            return request.body.decode('utf-8')
-        return request.body
+        content_type = request.headers.get('Content-Type')
+        if not self._log_content(content_type):
+            return "content not logged"
+        else:
+            if content_type == 'application/json' and request.body:
+                try:
+                    data = json.loads(request.body)
+                except ValueError:
+                    return request.body
+                masked_data = self.mask_sensitive_data(data)
+                return self.pretty_json_dumps(masked_data)
+            if 'charset=utf-8' in request.headers.get('Content-Type', ''):
+                return request.body.decode('utf-8')
+            return request.body
 
 
 class Client(requests.Session):
@@ -118,12 +129,12 @@ class Client(requests.Session):
     Client for making signed requests to the Points Loyalty Commerce Platform.
     """
 
-    api_logger = APILogger(request_logger, response_logger)
-
-    def __init__(self, base_url, key_id=None, shared_secret=None, *args, **kwargs):
+    def __init__(self, base_url, key_id=None, shared_secret=None, loggable_content_types=None, *args, **kwargs):
         super(Client, self).__init__(*args, **kwargs)
         if key_id is not None:
             self.auth = MACAuth(key_id, shared_secret)
+
+        self.api_logger = APILogger(request_logger, response_logger, loggable_content_types)
 
         self.base_url = base_url
         self.key_id = key_id
@@ -135,9 +146,9 @@ class Client(requests.Session):
             request.url = pylcp.url.url_path_join(self.base_url, request.url)
 
         if request.method.upper() in {'PATCH', 'POST', 'PUT'}:
-            request.headers.setdefault('content-type', 'application/json')
+            request.headers.setdefault('Content-Type', 'application/json')
         else:
-            request.headers.setdefault('content-type', '')
+            request.headers.setdefault('Content-Type', '')
 
         prepared_request = super(Client, self).prepare_request(request)
         return prepared_request
@@ -169,7 +180,7 @@ class MACAuth(requests.auth.AuthBase):
             request.url,
             self.key_id,
             self.shared_secret,
-            request.headers['content-type'],
+            request.headers['Content-Type'],
             request.body
         )
         return request
