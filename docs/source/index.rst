@@ -40,6 +40,10 @@ The example below shows how to submit a signed request to the LCP::
 
 User's Guide
 ------------
+.. toctree::
+    :maxdepth: 2
+
+    testing
 
 API Documentation
 -----------------
