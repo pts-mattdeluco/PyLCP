@@ -53,7 +53,7 @@ Request Signing
 ---------------
 
 In general, the request signing performed by the methods on the 
-:class:`Client <pylcp.api.Client>` class should be sufficient in the most, 
+:class:`Client <pylcp.api.Client>` class should be sufficient in most, 
 if not all scenarios. The `pylcp.mac`
 module has several functions that perform the various steps of request signing.
 
