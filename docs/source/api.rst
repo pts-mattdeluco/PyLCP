@@ -1,10 +1,7 @@
 .. _api:
 
-Developer Interface
-===================
-
 Sending Requests
-----------------
+================
 
 All requests to the LCP can be sent using an instance of the :class:`Client <pylcp.api.Client>`
 class configured with the appropriate credentials. A :class:`Client <pylcp.api.Client>`
@@ -33,7 +30,7 @@ In addition, the client will log the headers and body of every request.
     :members:
 
 Logging
--------
+=======
 
 The headers and bodies for all requests and responses are logged using the
 loggers `pylcp.api.request_logger` and `pylcp.api.response_logger`
@@ -50,7 +47,7 @@ and response data.
 .. autofunction:: pylcp.api.mask_sensitive_billing_info_data
 
 Request Signing
----------------
+===============
 
 In general, the request signing performed by the methods on the 
 :class:`Client <pylcp.api.Client>` class should be sufficient in most, 

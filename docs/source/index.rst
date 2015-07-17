@@ -43,14 +43,8 @@ User's Guide
 .. toctree::
     :maxdepth: 2
 
+    api
     testing
-
-API Documentation
------------------
-.. toctree::
-   :maxdepth: 2
-
-   api
 
 Contributer Guide
 -----------------
