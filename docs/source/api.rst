@@ -49,4 +49,18 @@ and response data.
 .. autofunction:: pylcp.api.mask_credit_card_number_with_bin
 .. autofunction:: pylcp.api.mask_sensitive_billing_info_data
 
+Request Signing
+---------------
+
+In general, the request signing performed by the methods on the 
+:class:`Client <pylcp.api.Client>` class should be sufficient in the most, 
+if not all scenarios. The `pylcp.mac`
+module has several functions that perform the various steps of request signing.
+
+.. autofunction:: pylcp.mac.build_normalized_request_string
+.. autofunction:: pylcp.mac.generate_authorization_header_value
+.. autofunction:: pylcp.mac.generate_ext
+.. autofunction:: pylcp.mac.generate_nonce
+.. autofunction:: pylcp.mac.generate_signature
+
 :ref:`modindex`
