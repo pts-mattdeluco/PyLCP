@@ -5,7 +5,10 @@ from builtins import object
 import decimal
 import http.client
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 from nose import tools
 import requests
 
