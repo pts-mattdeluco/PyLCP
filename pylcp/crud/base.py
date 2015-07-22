@@ -4,7 +4,11 @@ The domain objects derived from LCPResource can be used for basic CRUD
 operations to support internal services.
 
 """
-import httplib
+from future import standard_library
+standard_library.install_aliases()  # NOQA
+
+from builtins import object
+import http.client
 
 import requests
 import simplejson as json
@@ -23,7 +27,7 @@ class LCPResource(object):
         self._url = None
 
         if response is not None:
-            if response.status_code != httplib.NO_CONTENT:
+            if response.status_code != http.client.NO_CONTENT:
                 self._json = response.json()
                 try:
                     self._url = self._self_link()
@@ -113,7 +117,7 @@ class CRUDError(Exception):
 
     def _format_optional_args(self, request_kwargs):
         formatted_request = ''
-        for key in request_kwargs.keys():
+        for key in list(request_kwargs.keys()):
             value = request_kwargs[key]
             label = self._format_label(key)
 

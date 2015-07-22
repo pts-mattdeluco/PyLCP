@@ -1,3 +1,5 @@
+from builtins import object
+
 import mock
 from nose import tools
 

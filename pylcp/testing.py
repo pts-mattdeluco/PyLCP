@@ -1,3 +1,5 @@
+from builtins import bytes
+
 from nose.tools import eq_
 from requests import adapters, models
 
@@ -33,13 +35,13 @@ class MockRequestAdapter(adapters.BaseAdapter):
         pass  # no connection to close
 
     def assert_request_properties(self, **expected_properties):
-        for property_name, expected_value in expected_properties.items():
+        for property_name, expected_value in list(expected_properties.items()):
             actual_value = getattr(self.last_request, property_name)
             message = '{} did not match. Expected: {}, actual: {}'.format(property_name, expected_value, actual_value)
             eq_(actual_value, expected_value, message)
 
     def assert_headers_present(self, expected_headers):
-        for header_name, expected_value in expected_headers.items():
+        for header_name, expected_value in list(expected_headers.items()):
             actual_value = self.last_request.headers.get(header_name)
             message = 'Header {} did not match. Expected: {}, actual: {}'.format(
                 header_name,

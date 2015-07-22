@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import object
 import copy
 import decimal
 import json
@@ -67,7 +69,7 @@ class APILogger(object):
             )
 
     def format_headers(self, headers):
-        return '\n'.join('{}: {}'.format(k, v) for k, v in headers.items())
+        return '\n'.join('{}: {}'.format(k, v) for k, v in list(headers.items()))
 
     def pretty_json_dumps(self, data):
         return json.dumps(data, sort_keys=True, indent=2)
@@ -81,7 +83,7 @@ class APILogger(object):
     def mask_sensitive_data(self, data):
         if not data:
             return
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             try:
                 data = json.loads(data)
             except ValueError:
@@ -205,7 +207,7 @@ def mask_credit_card_number_with_bin(credit_card_number):
 def mask_sensitive_billing_info_data(data):
     if not data:
         return
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         try:
             data = json.loads(data)
         except ValueError:

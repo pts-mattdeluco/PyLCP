@@ -1,12 +1,17 @@
+from future import standard_library
+standard_library.install_aliases()  # NOQA
+
+from builtins import str
+from builtins import object
 import base64
 import hashlib
 import hmac
-import httplib
+import http.client
 import logging
 import os
 import re
 import time
-import urlparse
+import urllib.parse
 
 
 logger = logging.getLogger(__name__)
@@ -24,9 +29,9 @@ def generate_ext(content_type, body):
         # Hashing requires a bytestring, so we need to encode back to utf-8
         # in case the body/header have already been decoded to unicode (by the
         # python json module for instance)
-        if isinstance(body, unicode):
+        if isinstance(body, str):
             body = body.encode('utf-8')
-        if isinstance(content_type, unicode):
+        if isinstance(content_type, str):
             content_type = content_type.encode('utf-8')
         content_type_plus_body = content_type + body
         content_type_plus_body_hash = hashlib.sha1(content_type_plus_body)
@@ -74,13 +79,13 @@ def generate_authorization_header_value(
         mac_key,
         content_type,
         body):
-    url_parts = urlparse.urlparse(url)
+    url_parts = urllib.parse.urlparse(url)
     port = url_parts.port
     if not port:
         if url_parts.scheme == 'https':
-            port = str(httplib.HTTPS_PORT)
+            port = str(http.client.HTTPS_PORT)
         else:
-            port = str(httplib.HTTP_PORT)
+            port = str(http.client.HTTP_PORT)
     ts = str(int(time.time()))
     nonce = generate_nonce()
     ext = generate_ext(content_type, body)
