@@ -8,7 +8,10 @@ from future import standard_library
 standard_library.install_aliases()  # NOQA
 
 from builtins import object
-import http.client
+try:
+    from http.client import NO_CONTENT
+except ImportError:
+    from httplib import NO_CONTENT
 
 import requests
 import simplejson as json
@@ -27,7 +30,7 @@ class LCPResource(object):
         self._url = None
 
         if response is not None:
-            if response.status_code != http.client.NO_CONTENT:
+            if response.status_code != NO_CONTENT:
                 self._json = response.json()
                 try:
                     self._url = self._self_link()

@@ -3,7 +3,12 @@ standard_library.install_aliases()  # NOQA
 
 from builtins import object
 import decimal
-import http.client
+try:
+    from http.client import NO_CONTENT
+    from http.client import NOT_FOUND
+except ImportError:
+    from httplib import NO_CONTENT
+    from httplib import NOT_FOUND
 
 try:
     from unittest import mock
@@ -24,7 +29,7 @@ class TestLCPResource(object):
         tools.assert_equal('some_url', lcp_obj.url)
 
     def test_populates_url_from_location_header(self):
-        response_mock = test_base.mock_response(http.client.NO_CONTENT)
+        response_mock = test_base.mock_response(NO_CONTENT)
         lcp_obj = crud.LCPResource(response_mock)
         tools.assert_equal('http://example.com/foo/some_id', lcp_obj.url)
 
@@ -70,7 +75,7 @@ class TestLCPCRUD(object):
         test_base.assert_lcp_resource(mocked_response, response)
 
     def test_request_failures_raises_crud_error(self):
-        mocked_response = test_base.mock_response(status_code=http.client.NOT_FOUND)
+        mocked_response = test_base.mock_response(status_code=NOT_FOUND)
         self.mock_client.post.return_value = mocked_response
         with tools.assert_raises(crud.CRUDError):
             self.lcp_crud.create(test_base.SAMPLE_URL, {})
@@ -92,7 +97,7 @@ class TestLCPCRUD(object):
         test_base.assert_lcp_resource(mocked_response, response)
 
     def test_delete(self):
-        mocked_response = test_base.mock_response(status_code=http.client.NO_CONTENT)
+        mocked_response = test_base.mock_response(status_code=NO_CONTENT)
         self.mock_client.delete.return_value = mocked_response
 
         response = self.lcp_crud.delete(test_base.SAMPLE_URL)
@@ -122,7 +127,7 @@ class TestCrudErrors(object):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = http.client.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock)
 
@@ -134,7 +139,7 @@ class TestCrudErrors(object):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = http.client.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock, **{'request_payload': 'some_payload'})
 
@@ -146,7 +151,7 @@ class TestCrudErrors(object):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = http.client.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
         request_payload = {'decimal': decimal.Decimal('3.15')}
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock, **{'request_payload': request_payload})
@@ -160,7 +165,7 @@ class TestCrudErrors(object):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = http.client.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock, **{'request_parameters': {'a': 'b'}})
 
