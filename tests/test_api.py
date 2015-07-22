@@ -175,7 +175,7 @@ class TestSensitiveDataMasking(APILoggerTestBase):
 
     def test_json_in_a_string_is_masked(self):
         unmasked_string = '{"billingInfo": {}, "password": "secret"}'
-        masked_string = '{"password": "XXX", "billingInfo": {}}'
+        masked_string = json.dumps({"password": "XXX", "billingInfo": {}})
         eq_(masked_string, self.api_logger.mask_sensitive_data(unmasked_string))
 
     def test_mask_sensitive_data_cleans_a_copy_of_data(self):
