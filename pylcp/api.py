@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 request_logger = logging.getLogger(__name__ + '.request')
 response_logger = logging.getLogger(__name__ + '.response')
 
+try:
+    isinstance("", basestring)
+
+    def is_string(s):
+        return isinstance(s, basestring)  # NOQA
+except NameError:
+    def is_string(s):
+        return isinstance(s, str)
+
 
 class JsonResponseWrapper(object):
     def __init__(self, response):
@@ -83,7 +92,7 @@ class APILogger(object):
     def mask_sensitive_data(self, data):
         if not data:
             return
-        if isinstance(data, str):
+        if is_string(data):
             try:
                 data = json.loads(data)
             except ValueError:
@@ -207,7 +216,7 @@ def mask_credit_card_number_with_bin(credit_card_number):
 def mask_sensitive_billing_info_data(data):
     if not data:
         return
-    if isinstance(data, str):
+    if is_string(data):
         try:
             data = json.loads(data)
         except ValueError:
