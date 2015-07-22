@@ -19,7 +19,7 @@ def mock_response(status_code=http.client.OK, headers=None, body=None):
     response_mock.headers = headers if headers is not None else {'location': 'http://example.com/foo/some_id'}
     if body is None:
         body = {}
-    response_mock._content = bytes(json.dumps(body))
+    response_mock._content = bytes(json.dumps(body).encode('utf-8'))
     response_mock.status_code = status_code
     return response_mock
 
