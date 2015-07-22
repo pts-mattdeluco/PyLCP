@@ -28,7 +28,8 @@ class MockRequestAdapter(adapters.BaseAdapter):
             'content-type': 'application/json',
             'location': request.url,
         }
-        response._content = bytes(request.body)
+        if request.body is not None:
+            response._content = bytes(request.body.encode('utf-8'))
         return response
 
     def close(self):
