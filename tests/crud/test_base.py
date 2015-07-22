@@ -128,7 +128,7 @@ class TestCrudErrors(object):
 
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nResponse: text',
-                           crud_error.message)
+                           str(crud_error))
 
     def test_create_exception_with_request_payload_returns_exception_with_request_payload(self):
         response_mock = mock.Mock(spec=requests.Response)
@@ -140,7 +140,7 @@ class TestCrudErrors(object):
 
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nRequest payload: "some_payload"\nResponse: text',
-                           crud_error.message)
+                           str(crud_error))
 
     def test_create_exception_with_request_payload_containing_decimal_data_returns_exception_with_request(self):
         response_mock = mock.Mock(spec=requests.Response)
@@ -154,7 +154,7 @@ class TestCrudErrors(object):
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nRequest payload: {\n  "decimal": 3.15\n}\n'
                            'Response: text',
-                           crud_error.message)
+                           str(crud_error))
 
     def test_create_exception_with_request_parameters_returns_exception_with_parameters(self):
         response_mock = mock.Mock(spec=requests.Response)
@@ -166,4 +166,4 @@ class TestCrudErrors(object):
 
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nRequest parameters: {\n  "a": "b"\n}\nResponse: text',
-                           crud_error.message)
+                           str(crud_error))
