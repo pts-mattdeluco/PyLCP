@@ -6,7 +6,12 @@ from builtins import object
 import base64
 import hashlib
 import hmac
-import http.client
+try:
+    from http.client import HTTP_PORT
+    from http.client import HTTPS_PORT
+except ImportError:
+    from httplib import HTTP_PORT
+    from httplib import HTTPS_PORT
 import logging
 import os
 import re
@@ -83,9 +88,9 @@ def generate_authorization_header_value(
     port = url_parts.port
     if not port:
         if url_parts.scheme == 'https':
-            port = str(http.client.HTTPS_PORT)
+            port = str(HTTPS_PORT)
         else:
-            port = str(http.client.HTTP_PORT)
+            port = str(HTTP_PORT)
     ts = str(int(time.time()))
     nonce = generate_nonce()
     ext = generate_ext(content_type, body)
