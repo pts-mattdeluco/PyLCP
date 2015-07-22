@@ -72,7 +72,7 @@ class APILogger(object):
         return '\n'.join('{}: {}'.format(k, v) for k, v in list(headers.items()))
 
     def pretty_json_dumps(self, data):
-        return json.dumps(data, sort_keys=True, indent=2)
+        return json.dumps(data, sort_keys=True, indent=2, separators=(',', ': '))
 
     def prettify_alleged_json(self, text):
         try:

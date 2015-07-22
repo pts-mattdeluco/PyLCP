@@ -43,7 +43,7 @@ class TestJsonPrettifying(APILoggerTestBase):
 
     def test_prettified_json_is_sorted(self):
         eq_(
-            '{{\n{0}"x": 2, \n{0}"y": 1\n}}'.format(' ' * self.indent_amount),
+            '{{\n{0}"x": 2,\n{0}"y": 1\n}}'.format(' ' * self.indent_amount),
             self.api_logger.prettify_alleged_json('{"y": 1, "x": 2}')
         )
 
@@ -128,7 +128,13 @@ class TestSensitiveBillingInfoDataMasking(object):
 
     def test_json_in_a_string_is_masked(self):
         unmasked = '{"billingInfo": {"cardType": "VISA", "cardNumber": "1234567890123456", "securityCode": "123"}}'
-        masked_string = '{"billingInfo": {"cardType": "VISA", "cardNumber": "XXXXXXXXXXXX3456", "securityCode": "XXX"}}'
+        masked_string = json.dumps({
+            "billingInfo": {
+                "cardType": "VISA",
+                "cardNumber": "XXXXXXXXXXXX3456",
+                "securityCode": "XXX"
+            }
+        })
         eq_(masked_string, api.mask_sensitive_billing_info_data(unmasked))
 
 
@@ -217,7 +223,7 @@ class TestMaskingAndFormattingOfRequestBody(APILoggerTestBase):
             'password': 'XXX',
             'language': 'Python',
         }
-        eq_(json.dumps(expected, indent=2, sort_keys=True), result)
+        eq_(json.dumps(expected, indent=2, sort_keys=True, separators=(',', ': ')), result)
 
     def test_non_json_request_body_is_not_altered(self):
         request = requests.Request()
