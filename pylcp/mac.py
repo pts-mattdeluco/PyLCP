@@ -23,9 +23,12 @@ logger = logging.getLogger(__name__)
 
 
 def generate_ext(content_type, body):
-    """Implements the notion of the ext as described in
-    http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.1"""
+    """Returns an `ext` value as described in
+    `<http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.1>`_.
 
+    :param content_type: The content type of the request e.g. application/json.'
+    :param body: The request body as a byte or Unicode string.
+    """
     if (
             content_type is not None and
             body is not None and
@@ -48,8 +51,17 @@ def generate_ext(content_type, body):
 
 def build_normalized_request_string(
         ts, nonce, http_method, host, port, request_path, ext):
-    """Implements the notion of a normalized request string as described in
-    http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.2.1"""
+    """Returns a normalized request string as described in
+    `<http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02#section-3.2.1>`_.
+
+    :param ts: The integer portion of a Unix epoch timestamp.
+    :param nonce: A cryptographic nonce value.
+    :param http_method: The HTTP method of the request e.g. `POST`.
+    :param host: The host name of the server.
+    :param port: The port of the server.
+    :param request_path: The path portion of the request URL i.e. everything after the host and port.
+    :param ext: An ext value computed from the request content type and body.
+    """
 
     normalized_request_string = \
         ts + '\n' + \
@@ -63,15 +75,25 @@ def build_normalized_request_string(
 
 
 def generate_nonce():
-    """Generates a random string intend for use as a nonce when computing an
-    HMAC."""
+    """Returns a random string intend for use as a nonce when computing an
+    HMAC.
+    """
     return base64.b64encode(os.urandom(8))
 
 
 def generate_signature(mac_key, normalized_request_string):
-    """Generate a request's MAC given a normalized request string (aka
-    a summary of the key elements of the request and the mac key (shared
-    secret)."""
+    """Returns a request's signature given a normalized request string (a.k.a.
+    a summary of the key elements of the request) and the MAC key (shared
+    secret).
+
+    The `mac_key` must match the key ID used to create the normalized request string.
+    The `normalized_request_string` should be generated using
+    :py:func:`build_normalized_request_string <pylcp.mac.build_normalized_request_string>`.
+
+    :param mac_key: The MAC key to use to sign the request.
+    :param normalized_request_string: Key elements of the request in a normalized form.
+    """
+
     key = base64.b64decode(mac_key.replace('-', '+').replace('_', '/') + '=')
     signature = hmac.new(key, normalized_request_string, hashlib.sha1)
     return base64.b64encode(signature.digest())
@@ -84,6 +106,16 @@ def generate_authorization_header_value(
         mac_key,
         content_type,
         body):
+    """Returns a suitable value for the HTTP `Authorization` header that
+    contains a valid signature for the request.
+
+    :param http_method: The HTTP method of the request e.g. `POST`.
+    :param url: The full URL of the request.
+    :param mac_key_identifier: The ID of the MAC key to be used to sign the request
+    :param mac_key: The MAC key to be used to sign the request
+    :param content_type: The request content type.
+    :param body: The request body as a byte or Unicde string.
+    """
     url_parts = urllib.parse.urlparse(url)
     port = url_parts.port
     if not port:
@@ -115,7 +147,8 @@ def generate_authorization_header_value(
 
 class AuthHeaderValue(object):
     """As per http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-02 create
-    the value for the HTTP Authorization header using an existing hmac."""
+    the value for the HTTP Authorization header using an existing HMAC.
+    """
 
     auth_header_re = re.compile(
         '^\s*'

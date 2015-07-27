@@ -25,7 +25,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 project = u'PyLCP'
-copyright = u'2012-{0}, Points International Ltd.'.format(datetime.datetime.now().year)
+copyright = u'2012-{0}, Points International Ltd'.format(datetime.datetime.now().year)
 
 with open('../../version_number.txt', 'r') as f:
     version = f.readline()
@@ -34,8 +34,7 @@ release = version
 exclude_patterns = []
 pygments_style = 'sphinx'
 
-html_theme = 'default'
-html_static_path = ['_static']
+html_theme = 'alabaster'
 htmlhelp_basename = 'PyLCPdoc'
 
 intersphinx_mapping = {
