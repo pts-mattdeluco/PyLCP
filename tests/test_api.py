@@ -1,7 +1,10 @@
 from builtins import object
 import collections
 import decimal
-import httplib
+try:
+    from http.client import OK
+except ImportError:
+    from httplib import OK
 import json
 import logging
 
@@ -326,7 +329,7 @@ class TestApiClient(object):
                 eq_(self.response_log_format_string, response_logger_mock.debug.call_args_list[0][0][0])
                 log_format_dict = response_logger_mock.debug.call_args_list[0][0][1]
                 eq_(log_data['body'], json.loads(log_format_dict['body']))
-                eq_(httplib.OK, log_format_dict['status_code'])
+                eq_(OK, log_format_dict['status_code'])
                 eq_('OK', log_format_dict['reason'])
                 assert_in(log_data['headers'], log_format_dict['headers'])
                 assert_in('location: ' + log_data['url'], log_format_dict['headers'])
