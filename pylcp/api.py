@@ -126,7 +126,11 @@ class APILogger(object):
 
 class Client(requests.Session):
     """
-    Client for making signed requests to the Points Loyalty Commerce Platform.
+    A specialization of :class:`requests.Session` for making signed requests to the Points Loyalty Commerce Platform.
+
+    :param base_url: The HTTP scheme, netloc and version prefix for the LCP.
+    :param key_id: The MAC key identifier of the LCP credentials used for signing. Use `None` for anonymous requests.
+    :param shared_secret: The MAC key to use to sign requests.
     """
 
     def __init__(self, base_url, key_id=None, shared_secret=None, loggable_content_types=None, *args, **kwargs):
@@ -154,6 +158,10 @@ class Client(requests.Session):
         return prepared_request
 
     def send(self, request, **kwargs):
+        """Send a given :class:`requests.PreparedRequest`.
+
+        The request and response are logged.
+        """
         self._log_request(request)
         response = super(Client, self).send(request, **kwargs)
         self._log_response(response)
@@ -187,8 +195,7 @@ class MACAuth(requests.auth.AuthBase):
 
 
 def mask_credit_card_number(credit_card_number):
-    """
-    Masks all but the last 4 digits of a credit card.
+    """Returns `credit_card_number` with all but the last 4 digits masked with 'X'.
     """
     if credit_card_number is None:
         return None
@@ -200,8 +207,8 @@ def mask_credit_card_number(credit_card_number):
 
 
 def mask_credit_card_number_with_bin(credit_card_number):
-    """
-    Credit card number is partially masked, where the BIN (first 6 digits) and the last 4 digits are shown.
+    """Returns `credit_card_number` with all but the BIN (first 6 digits) and
+    the last 4 digits masked with 'X'.
     """
     if credit_card_number is None:
         return None
@@ -214,6 +221,9 @@ def mask_credit_card_number_with_bin(credit_card_number):
 
 
 def mask_sensitive_billing_info_data(data):
+    """Returns `data` with the `cardNumber` and `securityCode` fields of
+    the standard LCP `billingInfo` sub-dictionary masked.
+    """
     if not data:
         return
     if isinstance(data, basestring):
