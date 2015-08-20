@@ -1,5 +1,4 @@
-#! /bin/bash
-set -e
+#! /bin/bash -e
 
 LIB_NAME=pylcp
 VIRTUALENV_DIR=../.virtualenvs/$LIB_NAME
@@ -36,5 +35,7 @@ if [ $TEST_RC -ne 0 ]; then
 fi
 
 # Build distribution
-python setup.py sdist $UPLOAD
-
+SETUP_ERRORS=$(mktemp /tmp/tc-build-errors.XXXXXX)
+trap "rm -f $SETUP_ERRORS" 0 2 3 15
+python setup.py sdist $UPLOAD 2> >(tee $SETUP_ERRORS >&2)
+grep --ignore-case --invert-match "Upload failed" $SETUP_ERRORS
