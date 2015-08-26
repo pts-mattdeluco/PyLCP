@@ -1,5 +1,4 @@
-#! /bin/bash
-set -e
+#! /bin/bash -e
 
 LIB_NAME=pylcp
 VIRTUALENV_DIR=../.virtualenvs/$LIB_NAME
@@ -21,7 +20,7 @@ fi
 rm -rf $VIRTUALENV_DIR
 virtualenv --no-site-packages $VIRTUALENV_DIR
 source $VIRTUALENV_DIR/bin/activate
-pip install pip==1.5.4
+pip install --upgrade pip==1.5.4
 pip install -r requirements-dev.txt
 
 # Static analysis
@@ -36,5 +35,9 @@ if [ $TEST_RC -ne 0 ]; then
 fi
 
 # Build distribution
-python setup.py sdist $UPLOAD
-
+SETUP_ERRORS=$(mktemp /tmp/tc-build-errors.XXXXXX)
+trap "rm -f $SETUP_ERRORS" 0 2 3 15
+python setup.py sdist $UPLOAD 2> >(tee $SETUP_ERRORS >&2)
+if grep --quiet "Upload failed" $SETUP_ERRORS; then
+  exit 1
+fi
