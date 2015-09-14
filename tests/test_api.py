@@ -167,15 +167,21 @@ class TestSensitiveBillingInfoDataMasking(object):
         eq_(self.unmasked['billingInfo']['cardType'], self.masked['billingInfo']['cardType'])
 
     def test_json_in_a_string_is_masked(self):
-        unmasked = '{"billingInfo": {"cardType": "VISA", "cardNumber": "1234567890123456", "securityCode": "123"}}'
-        masked_string = json.dumps({
+        unmasked_string = json.dumps({
+            "billingInfo": {
+                "cardNumber": "1234567890123456",
+                "cardType": "VISA",
+                "securityCode": "123"
+            }
+        })
+        masked = {
             "billingInfo": {
                 "cardType": "VISA",
                 "cardNumber": "XXXXXXXXXXXX3456",
                 "securityCode": "XXX"
             }
-        })
-        eq_(masked_string, api.mask_sensitive_billing_info_data(unmasked))
+        }
+        eq_(masked, json.loads(api.mask_sensitive_billing_info_data(unmasked_string)))
 
 
 class TestSensitiveDataMasking(APILoggerTestBase):
@@ -215,8 +221,8 @@ class TestSensitiveDataMasking(APILoggerTestBase):
 
     def test_json_in_a_string_is_masked(self):
         unmasked_string = '{"billingInfo": {}, "password": "secret"}'
-        masked_string = json.dumps({"password": "XXX", "billingInfo": {}})
-        eq_(masked_string, self.api_logger.mask_sensitive_data(unmasked_string))
+        masked = {"password": "XXX", "billingInfo": {}}
+        eq_(masked, json.loads(self.api_logger.mask_sensitive_data(unmasked_string)))
 
     def test_mask_sensitive_data_cleans_a_copy_of_data(self):
         data = {
