@@ -1,7 +1,19 @@
-import decimal
-import httplib
+from future import standard_library
+standard_library.install_aliases()  # NOQA
 
-import mock
+from builtins import object
+import decimal
+try:
+    from http.client import NO_CONTENT
+    from http.client import NOT_FOUND
+except ImportError:
+    from httplib import NO_CONTENT
+    from httplib import NOT_FOUND
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 from nose import tools
 import requests
 
@@ -17,7 +29,7 @@ class TestLCPResource(object):
         tools.assert_equal('some_url', lcp_obj.url)
 
     def test_populates_url_from_location_header(self):
-        response_mock = test_base.mock_response(httplib.NO_CONTENT)
+        response_mock = test_base.mock_response(NO_CONTENT)
         lcp_obj = crud.LCPResource(response_mock)
         tools.assert_equal('http://example.com/foo/some_id', lcp_obj.url)
 
@@ -63,7 +75,7 @@ class TestLCPCRUD(object):
         test_base.assert_lcp_resource(mocked_response, response)
 
     def test_request_failures_raises_crud_error(self):
-        mocked_response = test_base.mock_response(status_code=httplib.NOT_FOUND)
+        mocked_response = test_base.mock_response(status_code=NOT_FOUND)
         self.mock_client.post.return_value = mocked_response
         with tools.assert_raises(crud.CRUDError):
             self.lcp_crud.create(test_base.SAMPLE_URL, {})
@@ -85,7 +97,7 @@ class TestLCPCRUD(object):
         test_base.assert_lcp_resource(mocked_response, response)
 
     def test_delete(self):
-        mocked_response = test_base.mock_response(status_code=httplib.NO_CONTENT)
+        mocked_response = test_base.mock_response(status_code=NO_CONTENT)
         self.mock_client.delete.return_value = mocked_response
 
         response = self.lcp_crud.delete(test_base.SAMPLE_URL)
@@ -115,31 +127,31 @@ class TestCrudErrors(object):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = httplib.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock)
 
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nResponse: text',
-                           crud_error.message)
+                           str(crud_error))
 
     def test_create_exception_with_request_payload_returns_exception_with_request_payload(self):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = httplib.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock, **{'request_payload': 'some_payload'})
 
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nRequest payload: "some_payload"\nResponse: text',
-                           crud_error.message)
+                           str(crud_error))
 
     def test_create_exception_with_request_payload_containing_decimal_data_returns_exception_with_request(self):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = httplib.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
         request_payload = {'decimal': decimal.Decimal('3.15')}
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock, **{'request_payload': request_payload})
@@ -147,16 +159,16 @@ class TestCrudErrors(object):
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nRequest payload: {\n  "decimal": 3.15\n}\n'
                            'Response: text',
-                           crud_error.message)
+                           str(crud_error))
 
     def test_create_exception_with_request_parameters_returns_exception_with_parameters(self):
         response_mock = mock.Mock(spec=requests.Response)
         response_mock.headers = {}
         response_mock.text = "text"
-        response_mock.status_code = httplib.NOT_FOUND
+        response_mock.status_code = NOT_FOUND
 
         crud_error = crud.CRUDError('/path/', 'POST', response_mock, **{'request_parameters': {'a': 'b'}})
 
         tools.assert_equal('404 returned.\nMethod: POST\n'
                            'Correlation ID: none\nURL: /path/\nRequest parameters: {\n  "a": "b"\n}\nResponse: text',
-                           crud_error.message)
+                           str(crud_error))

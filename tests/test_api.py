@@ -1,6 +1,10 @@
+from builtins import object
 import collections
 import decimal
-import httplib
+try:
+    from http.client import OK
+except ImportError:
+    from httplib import OK
 import json
 import logging
 
@@ -70,7 +74,7 @@ class TestJsonPrettifying(APILoggerTestBase):
         mock_response.text = '{"y": 1, "x": 2}'
         mock_response.headers = {'Content-Type': 'application/json'}
         eq_(
-            '{{\n{0}"x": 2, \n{0}"y": 1\n}}'.format(' ' * self.indent_amount),
+            '{{\n{0}"x": 2,\n{0}"y": 1\n}}'.format(' ' * self.indent_amount),
             self.api_logger.prettify_alleged_json(mock_response)
         )
 
@@ -163,9 +167,21 @@ class TestSensitiveBillingInfoDataMasking(object):
         eq_(self.unmasked['billingInfo']['cardType'], self.masked['billingInfo']['cardType'])
 
     def test_json_in_a_string_is_masked(self):
-        unmasked = '{"billingInfo": {"cardType": "VISA", "cardNumber": "1234567890123456", "securityCode": "123"}}'
-        masked_string = '{"billingInfo": {"cardType": "VISA", "cardNumber": "XXXXXXXXXXXX3456", "securityCode": "XXX"}}'
-        eq_(masked_string, api.mask_sensitive_billing_info_data(unmasked))
+        unmasked_string = json.dumps({
+            "billingInfo": {
+                "cardNumber": "1234567890123456",
+                "cardType": "VISA",
+                "securityCode": "123"
+            }
+        })
+        masked = {
+            "billingInfo": {
+                "cardType": "VISA",
+                "cardNumber": "XXXXXXXXXXXX3456",
+                "securityCode": "XXX"
+            }
+        }
+        eq_(masked, json.loads(api.mask_sensitive_billing_info_data(unmasked_string)))
 
 
 class TestSensitiveDataMasking(APILoggerTestBase):
@@ -205,8 +221,8 @@ class TestSensitiveDataMasking(APILoggerTestBase):
 
     def test_json_in_a_string_is_masked(self):
         unmasked_string = '{"billingInfo": {}, "password": "secret"}'
-        masked_string = '{"password": "XXX", "billingInfo": {}}'
-        eq_(masked_string, self.api_logger.mask_sensitive_data(unmasked_string))
+        masked = {"password": "XXX", "billingInfo": {}}
+        eq_(masked, json.loads(self.api_logger.mask_sensitive_data(unmasked_string)))
 
     def test_mask_sensitive_data_cleans_a_copy_of_data(self):
         data = {
@@ -253,7 +269,7 @@ class TestMaskingAndFormattingOfRequestBody(APILoggerTestBase):
             'password': 'XXX',
             'language': 'Python',
         }
-        eq_(json.dumps(expected, indent=2, sort_keys=True), result)
+        eq_(json.dumps(expected, indent=2, sort_keys=True, separators=(',', ': ')), result)
 
     def test_content_not_logged_when_type_not_in_loggable_types(self):
         self.request.headers['Content-Type'] = 'application/xxx'
@@ -319,7 +335,7 @@ class TestApiClient(object):
                 eq_(self.response_log_format_string, response_logger_mock.debug.call_args_list[0][0][0])
                 log_format_dict = response_logger_mock.debug.call_args_list[0][0][1]
                 eq_(log_data['body'], json.loads(log_format_dict['body']))
-                eq_(httplib.OK, log_format_dict['status_code'])
+                eq_(OK, log_format_dict['status_code'])
                 eq_('OK', log_format_dict['reason'])
                 assert_in(log_data['headers'], log_format_dict['headers'])
                 assert_in('location: ' + log_data['url'], log_format_dict['headers'])

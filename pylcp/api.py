@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import object
 import copy
 import decimal
 import json
@@ -12,6 +14,15 @@ import pylcp.url
 logger = logging.getLogger(__name__)
 request_logger = logging.getLogger(__name__ + '.request')
 response_logger = logging.getLogger(__name__ + '.response')
+
+try:
+    isinstance("", basestring)
+
+    def is_string(s):
+        return isinstance(s, basestring)  # NOQA
+except NameError:
+    def is_string(s):
+        return isinstance(s, str)
 
 
 class JsonResponseWrapper(object):
@@ -68,10 +79,10 @@ class APILogger(object):
             )
 
     def format_headers(self, headers):
-        return '\n'.join('{}: {}'.format(k, v) for k, v in headers.items())
+        return '\n'.join('{}: {}'.format(k, v) for k, v in list(headers.items()))
 
     def pretty_json_dumps(self, data):
-        return json.dumps(data, sort_keys=True, indent=2)
+        return json.dumps(data, sort_keys=True, indent=2, separators=(',', ': '))
 
     def _log_content(self, content_type):
         return not self.loggable_content_types or content_type in self.loggable_content_types
@@ -88,7 +99,7 @@ class APILogger(object):
     def mask_sensitive_data(self, data):
         if not data:
             return
-        if isinstance(data, basestring):
+        if is_string(data):
             try:
                 data = json.loads(data)
             except ValueError:
@@ -226,7 +237,7 @@ def mask_sensitive_billing_info_data(data):
     """
     if not data:
         return
-    if isinstance(data, basestring):
+    if is_string(data):
         try:
             data = json.loads(data)
         except ValueError:

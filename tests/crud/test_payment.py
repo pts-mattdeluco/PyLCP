@@ -1,4 +1,9 @@
-import mock
+from builtins import object
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 from nose import tools
 
 from pylcp import api

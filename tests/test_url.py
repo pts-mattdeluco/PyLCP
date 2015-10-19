@@ -1,3 +1,5 @@
+from builtins import object
+
 from nose.tools import eq_
 
 from pylcp.url import url_path_join

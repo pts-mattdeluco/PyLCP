@@ -1,3 +1,5 @@
+from builtins import bytes
+
 from nose.tools import eq_
 from requests import adapters, models
 
@@ -29,7 +31,8 @@ class MockRequestAdapter(adapters.BaseAdapter):
             'Content-Type': 'application/json',
             'location': request.url,
         }
-        response._content = bytes(request.body)
+        if request.body is not None:
+            response._content = bytes(request.body.encode('utf-8'))
         return response
 
     def close(self):
@@ -42,7 +45,7 @@ class MockRequestAdapter(adapters.BaseAdapter):
         :param expected_properties: The attributes to validate on the request.
         """
 
-        for property_name, expected_value in expected_properties.items():
+        for property_name, expected_value in list(expected_properties.items()):
             actual_value = getattr(self.last_request, property_name)
             message = '{} did not match. Expected: {}, actual: {}'.format(property_name, expected_value, actual_value)
             eq_(actual_value, expected_value, message)
@@ -53,7 +56,7 @@ class MockRequestAdapter(adapters.BaseAdapter):
         :param expected_headers: A dictionary of header name/value pairs.
         """
 
-        for header_name, expected_value in expected_headers.items():
+        for header_name, expected_value in list(expected_headers.items()):
             actual_value = self.last_request.headers.get(header_name)
             message = 'Header {} did not match. Expected: {}, actual: {}'.format(
                 header_name,

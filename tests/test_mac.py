@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from builtins import str
+from builtins import object
 import hashlib
 
 from mock import patch, call
@@ -43,7 +45,7 @@ class TestGenerateExt(object):
         body = "dave was here"
         ext = mac.generate_ext(content_type, body)
         eq_(ext, mock_sha1.return_value.hexdigest.return_value)
-        eq_(mock_sha1.call_args_list, [call(content_type + body)])
+        eq_(mock_sha1.call_args_list, [call((content_type + body).encode('utf-8'))])
 
     @patch('pylcp.mac.hashlib.sha1')
     def test_unicode_content_type_and_body_returns_sha1_of_both(self, mock_sha1):
