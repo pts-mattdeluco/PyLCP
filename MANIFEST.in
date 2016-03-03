@@ -1,6 +1,4 @@
 include version_number.txt
-include requirements.txt
-include requirements-dev.txt
 include LICENSE.md
 include README.md
 

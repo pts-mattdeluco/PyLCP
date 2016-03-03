@@ -1,11 +1,10 @@
 # Necessary to supress on error in Python 2.7.3 at the completion of
 # python setup.py test.
 # See http://bugs.python.org/issue15881#msg170215
-import multiprocessing        # NOQA
+import multiprocessing  # NOQA
 
 import distutils.command.clean
 import os
-import pkg_resources
 import setuptools
 import subprocess
 
@@ -28,35 +27,41 @@ def read_first_line(file_name):
         return f.readline().strip()
 
 
-def read_requirements(file_path):
-    return [
-        i.strip()
-        for i in pkg_resources.resource_string(__name__, file_path).split()
-        if i.strip()[0:1] != '#' and i.strip()[0:2] != '--' and len(i.strip()) > 0
-    ]
+REQUIREMENTS = [
+    'future>=0.4.13,<1.0',
+    'requests>=2.2.1,<3.0',
+    'simplejson>=3.6.4'
+]
+DEV_REQUIREMENTS = [
+    'coverage==3.7.1',
+    'flake8==2.5.4',
+    'mccabe==0.3',
+    'mock==1.0.1',
+    'nose==1.3.7',
+    'pep8==1.7.0',
+    'pyflakes==1.0.0',
+    'teamcity-messages==1.14'
+]
 
-
-REQUIREMENTS = read_requirements('requirements.txt')
-TEST_REQUIREMENTS = read_requirements('requirements-dev.txt')
-
+DOCS_REQUIREMENTS = ['sphinx']
 
 setuptools.setup(name='PyLCP',
                  version=read_first_line('version_number.txt'),
                  description="Python client library for Points Loyalty Commerce Platform.",
                  long_description=read_file('README.md'),
                  classifiers=[
-                      'Development Status :: 5 - Production/Stable',
-                      'Environment :: Web Environment',
-                      'Intended Audience :: Developers',
-                      'License :: OSI Approved :: BSD License',
-                      'Natural Language :: English',
-                      'Operating System :: POSIX :: Linux',
-                      'Programming Language :: Python',
-                      'Programming Language :: Python :: 2.7',
-                      'Programming Language :: Python :: 3.3',
-                      'Programming Language :: Python :: 3.4',
-                      'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-                      'Topic :: Software Development :: Libraries :: Python Modules'
+                     'Development Status :: 5 - Production/Stable',
+                     'Environment :: Web Environment',
+                     'Intended Audience :: Developers',
+                     'License :: OSI Approved :: BSD License',
+                     'Natural Language :: English',
+                     'Operating System :: POSIX :: Linux',
+                     'Programming Language :: Python',
+                     'Programming Language :: Python :: 2.7',
+                     'Programming Language :: Python :: 3.3',
+                     'Programming Language :: Python :: 3.4',
+                     'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+                     'Topic :: Software Development :: Libraries :: Python Modules'
                  ],
                  keywords='LCP REST',
                  author='Points International',
@@ -71,7 +76,11 @@ setuptools.setup(name='PyLCP',
                  # -*- Entry points: -*-
                  """,
                  test_suite='nose.collector',
-                 tests_require=TEST_REQUIREMENTS,
+                 tests_require=DEV_REQUIREMENTS,
+                 extras_require={
+                     'dev': DEV_REQUIREMENTS,
+                     'docs': DEV_REQUIREMENTS + DOCS_REQUIREMENTS
+                 },
                  cmdclass={
                      'clean': Clean
                  },
