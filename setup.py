@@ -8,6 +8,23 @@ import os
 import setuptools
 import subprocess
 
+REQUIREMENTS = [
+    'future>=0.4.13,<1.0',
+    'requests>=2.2.1,<3.0',
+    'simplejson>=3.6.4'
+]
+DEV_REQUIREMENTS = [
+    'coverage==3.7.1',
+    'flake8==2.5.4',
+    'mccabe==0.3',
+    'mock==1.0.1',
+    'nose==1.3.7',
+    'pep8==1.7.0',
+    'pyflakes==1.0.0',
+    'teamcity-messages==1.14'
+]
+DOCS_REQUIREMENTS = ['sphinx']
+
 
 class Clean(distutils.command.clean.clean):
     def run(self):
@@ -26,24 +43,6 @@ def read_first_line(file_name):
     with open(os.path.join(os.path.dirname(__file__), file_name)) as f:
         return f.readline().strip()
 
-
-REQUIREMENTS = [
-    'future>=0.4.13,<1.0',
-    'requests>=2.2.1,<3.0',
-    'simplejson>=3.6.4'
-]
-DEV_REQUIREMENTS = [
-    'coverage==3.7.1',
-    'flake8==2.5.4',
-    'mccabe==0.3',
-    'mock==1.0.1',
-    'nose==1.3.7',
-    'pep8==1.7.0',
-    'pyflakes==1.0.0',
-    'teamcity-messages==1.14'
-]
-
-DOCS_REQUIREMENTS = ['sphinx']
 
 setuptools.setup(name='PyLCP',
                  version=read_first_line('version_number.txt'),
