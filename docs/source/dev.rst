@@ -19,10 +19,9 @@ documentation updates.
 Development Dependencies
 ------------------------
 
-To run tests on PyLCP, install the development requirements from requirements-dev.txt
-which also install the run-time requirement::
+To run tests on PyLCP, install the development requirements::
 
-    pip install -r requirements-dev.txt
+    pip install .[dev]
 
 Testing
 -------
@@ -39,15 +38,15 @@ virtualenv active::
 
 or if you prefer pip::
 
-    pip install -e path/to/pylcp/source
+    pip install -e .
 
 Documentation
 -------------
 
 To build build the documentation, install Sphinx and related requirements::
 
+    pip install .[docs]
     cd docs
-    pip install -r requirements.txt
     make html
 
 To view locally built documentation, open the file docs/build/html/index.html in
