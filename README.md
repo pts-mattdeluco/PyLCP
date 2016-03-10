@@ -33,7 +33,8 @@ Developer Notes
 To get started:
 
     (create a virtual environment)
-    pip install -r requirements-dev.txt
+    pip install --upgrade pip
+    pip install .[dev]
 
 To run tests:
 
@@ -46,5 +47,6 @@ To check code style:
 To install a local copy of the code in to a virtual environment (for testing
 changes to PyLCP in your LCP App project):
 
-    python setup.py develop
+    pip install --upgrade pip
+    pip install -e .[dev]
 
