@@ -20,8 +20,8 @@ fi
 rm -rf $VIRTUALENV_DIR
 virtualenv --no-site-packages $VIRTUALENV_DIR
 source $VIRTUALENV_DIR/bin/activate
-pip install --upgrade pip==1.5.4
-pip install -r requirements-dev.txt
+pip install --upgrade pip
+pip install .[dev]
 
 # Static analysis
 flake8 pylcp tests setup.py
