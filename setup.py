@@ -14,14 +14,14 @@ REQUIREMENTS = [
     'simplejson>=3.6.4'
 ]
 DEV_REQUIREMENTS = [
-    'coverage==3.7.1',
-    'flake8==2.5.4',
-    'mccabe==0.3',
-    'mock==1.0.1',
+    'coverage==4.1',
+    'flake8==2.6.0',
+    'mccabe==0.5.0',
+    'mock==2.0.0',
     'nose==1.3.7',
     'pep8==1.7.0',
-    'pyflakes==1.0.0',
-    'teamcity-messages==1.14'
+    'pyflakes==1.2.3',
+    'teamcity-messages==1.18'
 ]
 DOCS_REQUIREMENTS = ['sphinx']
 
