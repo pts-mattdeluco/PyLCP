@@ -14,8 +14,8 @@ REQUIREMENTS = [
     'simplejson>=3.6.4'
 ]
 DEV_REQUIREMENTS = [
-    'coverage==4.1',
-    'flake8==3.0.1',
+    'coverage==4.2',
+    'flake8==3.0.2',
     'mccabe==0.5.0',
     'mock==2.0.0',
     'nose==1.3.7',
