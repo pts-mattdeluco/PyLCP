@@ -15,13 +15,13 @@ REQUIREMENTS = [
 ]
 DEV_REQUIREMENTS = [
     'coverage==4.2',
-    'flake8<3.0.0',
+    'flake8==3.0.3',
     'mccabe==0.5.2',
     'mock==2.0.0',
     'nose==1.3.7',
     'pep8==1.7.0',
     'pyflakes==1.2.3',
-    'teamcity-messages==1.19'
+    'teamcity-messages==1.20'
 ]
 DOCS_REQUIREMENTS = ['sphinx']
 
