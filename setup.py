@@ -20,7 +20,7 @@ DEV_REQUIREMENTS = [
     'mock==2.0.0',
     'nose==1.3.7',
     'pep8==1.7.0',
-    'pyflakes==1.2.3',
+    'pyflakes==1.3.0',
     'teamcity-messages==1.20'
 ]
 DOCS_REQUIREMENTS = ['sphinx']
