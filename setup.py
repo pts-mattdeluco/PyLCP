@@ -15,7 +15,7 @@ REQUIREMENTS = [
 ]
 DEV_REQUIREMENTS = [
     'coverage==4.2',
-    'flake8==3.0.4',
+    'flake8==3.2.0',
     'mccabe==0.5.2',
     'mock==2.0.0',
     'nose==1.3.7',
