@@ -292,7 +292,7 @@ class TestApiClient(object):
 
     def setup(self):
         api.logger.setLevel(logging.DEBUG)
-        self.client, self.test_adapter = self._get_client_and_adapter(base_url='http://BASE_URL')
+        self.client, self.test_adapter = self._get_client_and_adapter(base_url='http://BASEURL')
         self.request_log_format_string = (
             '------------------------------------------------------------\n'
             '%(method)s %(url)s HTTP/1.1\n%'
@@ -355,19 +355,19 @@ class TestApiClient(object):
         eq_(mock.sentinel.SHARED_SECRET, client.shared_secret)
 
     def test_request_adds_base_url_to_relative_urls(self):
-        self._assert_calls_requests_with_url('some/relative/path', 'http://BASE_URL/some/relative/path')
-        self._assert_calls_requests_with_url('/some/absolute/path', 'http://BASE_URL/some/absolute/path')
+        self._assert_calls_requests_with_url('some/relative/path', 'http://baseurl/some/relative/path')
+        self._assert_calls_requests_with_url('/some/absolute/path', 'http://baseurl/some/absolute/path')
 
     def test_request_adds_base_url_with_trailing_slash_to_relative_urls(self):
-        self.client.base_url = 'http://BASE_URL/'
-        self._assert_calls_requests_with_url('some/relative/path', 'http://BASE_URL/some/relative/path')
-        self._assert_calls_requests_with_url('/some/absolute/path', 'http://BASE_URL/some/absolute/path')
+        self.client.base_url = 'http://baseurl/'
+        self._assert_calls_requests_with_url('some/relative/path', 'http://baseurl/some/relative/path')
+        self._assert_calls_requests_with_url('/some/absolute/path', 'http://baseurl/some/absolute/path')
 
     def test_delete_issues_a_DELETE_request_with_none_headers(self):
         self.client.delete('/url')
         self.test_adapter.assert_request_properties(
             method='DELETE',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
 
     def test_delete_issues_a_DELETE_request_with_custom_headers(self):
@@ -375,7 +375,7 @@ class TestApiClient(object):
         self.client.delete('/url', headers=headers)
         self.test_adapter.assert_request_properties(
             method='DELETE',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
         self.test_adapter.assert_headers_present(headers)
 
@@ -383,7 +383,7 @@ class TestApiClient(object):
         self.client.options('/url')
         self.test_adapter.assert_request_properties(
             method='OPTIONS',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
 
     def test_options_issues_an_OPTIONS_request_with_headers(self):
@@ -391,7 +391,7 @@ class TestApiClient(object):
         self.client.options('/url', headers=headers)
         self.test_adapter.assert_request_properties(
             method='OPTIONS',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
         self.test_adapter.assert_headers_present(headers)
 
@@ -399,14 +399,14 @@ class TestApiClient(object):
         self.client.patch('/url')
         self.test_adapter.assert_request_properties(
             method='PATCH',
-            url='http://BASE_URL/url'
+            url='http://baseurl/url'
         )
 
     def test_put_issues_a_PUT_request_with_json_content_type(self):
         self.client.put('/url')
         self.test_adapter.assert_request_properties(
             method='PUT',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
         self.test_adapter.assert_headers_present({'Content-Type': 'application/json'})
 
@@ -414,21 +414,21 @@ class TestApiClient(object):
         self.client.post('/url', data={})
         self.test_adapter.assert_request_properties(
             method='POST',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
         self.test_adapter.assert_headers_present({'Content-Type': 'application/json'})
 
     @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
     def test_get_issues_a_GET_request_with_none_headers_and_none_params(self, auth_header_mock):
         client, test_adapter = self._get_client_and_adapter(
-            base_url='http://BASE_URL',
+            base_url='http://baseurl',
             key_id='foobar',
         )
 
         client.get('/url')
         test_adapter.assert_request_properties(
             method='GET',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
         test_adapter.assert_headers_present({'Authorization': 'auth_value'})
 
@@ -439,14 +439,14 @@ class TestApiClient(object):
         self.client.get('/url', headers=headers, params=params)
         self.test_adapter.assert_request_properties(
             method='GET',
-            url='http://BASE_URL/url?paramName=param_value',
+            url='http://baseurl/url?paramName=param_value',
         )
         self.test_adapter.assert_headers_present(headers)
 
     @mock.patch('pylcp.api.generate_authorization_header_value', return_value='auth_value')
     def test_specifying_key_id_causes_Authorization_header_to_be_set(self, auth_header_mock):
         client, test_adapter = self._get_client_and_adapter(
-            base_url='http://BASE_URL',
+            base_url='http://baseurl',
             key_id='foobar',
         )
 
@@ -454,7 +454,7 @@ class TestApiClient(object):
 
         test_adapter.assert_request_properties(
             method='METHOD',
-            url='http://BASE_URL/url',
+            url='http://baseurl/url',
         )
         test_adapter.assert_headers_present({'Authorization': 'auth_value'})
 
@@ -477,7 +477,7 @@ class TestApiClient(object):
 
     def test_post_logs_with_json_data(self):
         log_data = {
-            'url': 'http://BASE_URL/url',
+            'url': 'http://baseurl/url',
             'headers': 'Content-Type: application/json',
             'body': {'answer': 42},
             'method': 'POST'
@@ -486,7 +486,7 @@ class TestApiClient(object):
 
     def test_post_logs_with_non_json_data(self):
         log_data = {
-            'url': 'http://BASE_URL/url',
+            'url': 'http://baseurl/url',
             'headers': 'Content-Type: application/json',
             'body': 'This is not JSON',
             'method': 'POST'
@@ -504,7 +504,7 @@ class TestApiClient(object):
 
     def test_post_logs_with_unicode_data(self):
         log_data = {
-            'url': 'http://BASE_URL/url',
+            'url': 'http://baseurl/url',
             'headers': 'Content-Type: application/json',
             'body': u"Ceci c'est la Fran\xe7ais",
             'method': 'POST'
