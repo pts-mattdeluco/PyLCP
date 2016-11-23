@@ -22,6 +22,7 @@ virtualenv --no-site-packages $VIRTUALENV_DIR
 source $VIRTUALENV_DIR/bin/activate
 pip install --upgrade pip
 pip install .[dev]
+pip install requests[security]
 
 # Static analysis
 flake8 pylcp tests setup.py
