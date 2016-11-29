@@ -11,7 +11,14 @@ import subprocess
 REQUIREMENTS = [
     'future>=0.4.13,<1.0',
     'requests>=2.2.1,<3.0',
-    'simplejson>=3.6.4'
+    'simplejson>=3.6.4',
+    'cffi==1.9.1',
+    'cryptography==1.6',
+    'idna==2.1',
+    'ipaddress==1.0.17',
+    'pyasn1==0.1.9',
+    'pycparser==2.17',
+    'pyOpenSSL==16.2.0'
 ]
 DEV_REQUIREMENTS = [
     'coverage==4.2',
