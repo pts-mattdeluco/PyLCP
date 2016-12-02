@@ -22,6 +22,9 @@ virtualenv --no-site-packages $VIRTUALENV_DIR
 source $VIRTUALENV_DIR/bin/activate
 pip install --upgrade pip
 pip install .[dev]
+pip install flake8==3.0.4
+pip install pyflakes==1.2.3
+pip install pycodestyle==2.0.0
 
 # Static analysis
 flake8 pylcp tests setup.py
