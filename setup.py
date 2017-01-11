@@ -15,7 +15,7 @@ REQUIREMENTS = [
     'cffi==1.9.1',
     'cryptography==1.7.1',
     'idna==2.2',
-    'ipaddress==1.0.17',
+    'ipaddress==1.0.18',
     'pyasn1==0.1.9',
     'pycparser==2.17',
     'pyOpenSSL==16.2.0'
