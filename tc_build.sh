@@ -8,7 +8,7 @@ if [ "$1" == "upload" ]; then
         echo "Upload is only permitted from TeamCity build agents." 1>&2
         exit 1
     fi
-    UPLOAD="upload --repository opsbuild2"
+    UPLOAD="upload --repository devpi"
 elif [ $# == 0 ]; then
     UPLOAD=
 else
