@@ -13,7 +13,7 @@ REQUIREMENTS = [
     'requests>=2.2.1,<3.0',
     'simplejson>=3.6.4',
     'cffi==1.9.1',
-    'cryptography==1.7.2',
+    'cryptography==1.8',
     'idna==2.5',
     'ipaddress==1.0.18',
     'pyasn1==0.2.3',
