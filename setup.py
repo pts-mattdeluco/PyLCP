@@ -12,7 +12,7 @@ REQUIREMENTS = [
     'future>=0.4.13,<1.0',
     'requests>=2.2.1,<3.0',
     'simplejson>=3.6.4',
-    'cffi==1.9.1',
+    'cffi==1.10.0',
     'cryptography==1.8.1',
     'idna==2.5',
     'ipaddress==1.0.18',
