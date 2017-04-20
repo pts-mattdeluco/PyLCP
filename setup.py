@@ -18,7 +18,7 @@ REQUIREMENTS = [
     'ipaddress==1.0.18',
     'pyasn1==0.2.3',
     'pycparser==2.17',
-    'pyOpenSSL==16.2.0'
+    'pyOpenSSL==17.0.0'
 ]
 DEV_REQUIREMENTS = [
     'coverage>=4.2',
