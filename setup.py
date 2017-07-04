@@ -17,7 +17,7 @@ REQUIREMENTS = [
     'idna==2.5',
     'ipaddress==1.0.18',
     'pyasn1==0.2.3',
-    'pycparser==2.17',
+    'pycparser==2.18',
     'pyOpenSSL==17.1.0'
 ]
 DEV_REQUIREMENTS = [
