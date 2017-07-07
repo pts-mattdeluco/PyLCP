@@ -8,10 +8,6 @@ from future import standard_library
 standard_library.install_aliases()  # NOQA
 
 from builtins import object
-try:
-    from http.client import NO_CONTENT
-except ImportError:
-    from httplib import NO_CONTENT
 
 import requests
 import simplejson as json

@@ -62,7 +62,8 @@ class TestLCPResource(object):
     @tools.raises(KeyError)
     def test_getitem_with_no_response_raises_keyerror(self):
         lcp_obj = crud.LCPResource()
-        foo = lcp_obj['foo']
+        # Dummy call to raise KeyError and pass flake8
+        tools.assert_not_equals(lcp_obj['foo'], '')
 
     def test_json_instantiated_with_no_response(self):
         lcp_obj = crud.LCPResource()
