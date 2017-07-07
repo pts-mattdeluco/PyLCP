@@ -29,8 +29,10 @@ class LCPResource(object):
             return self.response.headers['location']
 
         # Traverse the dictionary returning None if a key isn't found during traversal
-        return reduce(lambda d, key: d.get(key, None) if isinstance(d, dict) else None,
-                      ['links', 'self', 'href'], self.json)
+        d = self.json
+        for k in ['links', 'self', 'href']:
+            d = d.get(k, None) if isinstance(d, dict) else None
+        return d
 
     @property
     def json(self):
