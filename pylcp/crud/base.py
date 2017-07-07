@@ -25,33 +25,25 @@ class LCPResource(object):
     are correctly initialized.
     """
     def __init__(self, response=None):
-        self._json = None
         self.response = response
-        self._url = None
-
-        if response is not None:
-            if response.status_code != NO_CONTENT:
-                self._json = response.json()
-                try:
-                    self._url = self._self_link()
-                except KeyError:
-                    pass
-            if 'location' in response.headers:
-                self._url = response.headers['location']
 
     @property
     def url(self):
-        return self._url
+        if self.response and 'location' in self.response.headers:
+            return self.response.headers['location']
+
+        # Traverse the dictionary returning None if a key isn't found during traversal
+        return reduce(lambda d, key: d.get(key, None) if isinstance(d, dict) else None,
+                      ['links', 'self', 'href'], self.json)
 
     @property
     def json(self):
-        return self.response.json()
-
-    def _self_link(self):
-        return self._json['links']['self']['href']
+        if self.response:
+            return self.response.json()
+        return {}
 
     def __getitem__(self, key):
-        return self._json[key]
+        return self.json[key]
 
 
 class LCPCrud(object):
