@@ -79,6 +79,9 @@ class LCPCrud(object):
     def update(self, path, payload):
         return self._resource_from_http('put', path, payload)
 
+    def modify(self, path, payload):
+        return self._resource_from_http('patch', path, payload)
+
     def delete(self, path):
         return self._resource_from_http('delete', path)
 
