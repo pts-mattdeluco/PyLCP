@@ -36,9 +36,7 @@ class LCPResource(object):
 
     @property
     def json(self):
-        if self.response:
-            return self.response.json()
-        return {}
+        return self.response.json() if self.response else {}
 
     def __getitem__(self, key):
         return self.json[key]
