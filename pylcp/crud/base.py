@@ -111,7 +111,7 @@ class CRUDError(Exception):
             "Method: {method}\n"
             "Correlation ID: {cid}\n"
             "URL: {url}\n"
-            "{formatted_request}"
+            u"{formatted_request}"
             "Response: {response}".format(
                 url=url,
                 method=method,
