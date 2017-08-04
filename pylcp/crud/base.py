@@ -8,10 +8,6 @@ from future import standard_library
 standard_library.install_aliases()  # NOQA
 
 from builtins import object
-try:
-    from http.client import NO_CONTENT
-except ImportError:
-    from httplib import NO_CONTENT
 
 import requests
 import simplejson as json
@@ -25,33 +21,25 @@ class LCPResource(object):
     are correctly initialized.
     """
     def __init__(self, response=None):
-        self._json = None
         self.response = response
-        self._url = None
-
-        if response is not None:
-            if response.status_code != NO_CONTENT:
-                self._json = response.json()
-                try:
-                    self._url = self._self_link()
-                except KeyError:
-                    pass
-            if 'location' in response.headers:
-                self._url = response.headers['location']
 
     @property
     def url(self):
-        return self._url
+        if self.response and 'location' in self.response.headers:
+            return self.response.headers['location']
+
+        # Traverse the dictionary returning None if a key isn't found during traversal
+        d = self.json
+        for k in ['links', 'self', 'href']:
+            d = d.get(k, None) if isinstance(d, dict) else None
+        return d
 
     @property
     def json(self):
-        return self.response.json()
-
-    def _self_link(self):
-        return self._json['links']['self']['href']
+        return self.response.json() if self.response else {}
 
     def __getitem__(self, key):
-        return self._json[key]
+        return self.json[key]
 
 
 class LCPCrud(object):

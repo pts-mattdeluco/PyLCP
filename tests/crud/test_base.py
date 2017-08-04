@@ -59,6 +59,16 @@ class TestLCPResource(object):
         json_copy['links'] = 'foo'
         tools.assert_equal('some_url', lcp_obj['links']['self']['href'])
 
+    @tools.raises(KeyError)
+    def test_getitem_with_no_response_raises_keyerror(self):
+        lcp_obj = crud.LCPResource()
+        # Dummy call to raise KeyError and pass flake8
+        tools.assert_not_equals(lcp_obj['foo'], '')
+
+    def test_json_instantiated_with_no_response(self):
+        lcp_obj = crud.LCPResource()
+        tools.assert_dict_equal({}, lcp_obj.json)
+
 
 class TestLCPCRUD(object):
     def setup(self):
