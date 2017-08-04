@@ -106,6 +106,14 @@ class TestLCPCRUD(object):
         tools.assert_equal(1, self.mock_client.put.call_count)
         test_base.assert_lcp_resource(mocked_response, response)
 
+    def test_modify(self):
+        mocked_response = test_base.mock_response(headers={}, body=test_base.SAMPLE_RESPONSE)
+        self.mock_client.patch.return_value = mocked_response
+
+        response = self.lcp_crud.modify(test_base.SAMPLE_URL, {})
+        tools.assert_equal(1, self.mock_client.patch.call_count)
+        test_base.assert_lcp_resource(mocked_response, response)
+
     def test_delete(self):
         mocked_response = test_base.mock_response(status_code=NO_CONTENT)
         self.mock_client.delete.return_value = mocked_response

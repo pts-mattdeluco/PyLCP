@@ -67,6 +67,9 @@ class LCPCrud(object):
     def update(self, path, payload):
         return self._resource_from_http('put', path, payload)
 
+    def modify(self, path, payload):
+        return self._resource_from_http('patch', path, payload)
+
     def delete(self, path):
         return self._resource_from_http('delete', path)
 
@@ -96,7 +99,7 @@ class CRUDError(Exception):
             "Method: {method}\n"
             "Correlation ID: {cid}\n"
             "URL: {url}\n"
-            "{formatted_request}"
+            u"{formatted_request}"
             "Response: {response}".format(
                 url=url,
                 method=method,
