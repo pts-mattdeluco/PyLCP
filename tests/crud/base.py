@@ -11,6 +11,7 @@ import json
 from nose import tools
 import requests
 
+from pylcp.api import JsonResponseWrapper
 from pylcp.crud import base
 
 SAMPLE_URL = 'http://test.com/test'
@@ -25,6 +26,16 @@ def mock_response(status_code=OK, headers=None, body=None):
     response_mock._content = bytes(json.dumps(body).encode('utf-8'))
     response_mock.status_code = status_code
     return response_mock
+
+
+def mock_response_with_json_response_wrapper(status_code=OK, headers=None, body=None):
+    response_mock = mock_response(status_code, headers, body)
+    return JsonResponseWrapper(response_mock)
+
+
+def mock_response_with_empty_json_response_wrapper():
+    response = requests.Response()
+    return JsonResponseWrapper(response)
 
 
 def assert_lcp_resource(mocked_response, response):
