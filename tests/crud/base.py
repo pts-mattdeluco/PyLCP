@@ -33,11 +33,6 @@ def mock_response_with_json_response_wrapper(status_code=OK, headers=None, body=
     return JsonResponseWrapper(response_mock)
 
 
-def mock_response_with_empty_json_response_wrapper():
-    response = requests.Response()
-    return JsonResponseWrapper(response)
-
-
 def assert_lcp_resource(mocked_response, response):
     tools.assert_is_instance(response, base.LCPResource)
     tools.assert_equal(mocked_response, response.response)
