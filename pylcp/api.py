@@ -1,7 +1,6 @@
 from builtins import str
 from builtins import object
 import copy
-import decimal
 import json
 import logging
 
@@ -29,12 +28,15 @@ class JsonResponseWrapper(object):
     def __init__(self, response):
         self.response = response
 
-    def json(self, **kwargs):
-        kwargs.setdefault('parse_float', decimal.Decimal)
-        return self.response.json(**kwargs)
+    def json(self):
+        return self.response.json(use_decimal=True)
 
     def __getattr__(self, attr):
         return getattr(self.response, attr)
+
+    def __bool__(self):
+        # Mimics behaviour of requests' Response
+        return self.response.ok
 
 
 def _requests_response_hook(response, *args, **kwargs):

@@ -2,6 +2,7 @@ from future import standard_library
 standard_library.install_aliases()  # NOQA
 
 from builtins import object
+
 try:
     from http.client import NO_CONTENT
     from http.client import NOT_FOUND
@@ -67,6 +68,12 @@ class TestLCPResource(object):
     def test_json_instantiated_with_no_response(self):
         lcp_obj = crud.LCPResource()
         tools.assert_dict_equal({}, lcp_obj.json)
+
+    def test_with_json_response_wrapper(self):
+        response_mock = test_base.mock_response_with_json_response_wrapper(
+            headers={}, body={'foo': 'bar', 'links': {'self': {'href': 'some_url'}}})
+        lcp_obj = crud.LCPResource(response_mock)
+        tools.assert_equal('bar', lcp_obj.json['foo'])
 
 
 class TestLCPCRUD(object):
